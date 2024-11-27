@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "Episodes",
-    platforms: [.iOS(.v15)],
+    platforms: [.iOS(.v17)],
     products: [
         .library(
             name: "Episodes",
@@ -13,12 +13,13 @@ let package = Package(
         ),
     ],
     dependencies: [
+        .package(path: "../Core"),
         .package(url: "https://github.com/scinfu/SwiftSoup", .upToNextMajor(from: "2.7.5"))
     ],
     targets: [
         .target(
             name: "Episodes",
-            dependencies: ["SwiftSoup"]
+            dependencies: ["Core", "SwiftSoup"]
         ),
         .testTarget(
             name: "EpisodesTests",

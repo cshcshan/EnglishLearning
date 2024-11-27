@@ -8,10 +8,10 @@
 import Foundation
 import SwiftSoup
 
-public struct HtmlConverter {
+public actor HtmlConverter {
     public init() {}
 
-    public func loadEpisodes() async throws -> [Episode] {
+    func loadEpisodes() async throws -> [Episode] {
         guard let url = URL.episodes else { return [] }
         let (data, _) = try await URLSession.shared.data(from: url)
 

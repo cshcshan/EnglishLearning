@@ -15,7 +15,7 @@ struct HtmlConverterTests {
         let htmlPathURL = Bundle.module.url(forResource: "Episodes", withExtension: "html")!
         let htmlString = try String(contentsOf: htmlPathURL, encoding: .utf8)
         let sut = HtmlConverter()
-        let episodes = try sut.convertHtmlToEpisodes(withHtml: htmlString)
+        let episodes = try await sut.convertHtmlToEpisodes(withHtml: htmlString)
         let firstEpisode = episodes.first!
 
         #expect(firstEpisode.id == "Episode 241114")
