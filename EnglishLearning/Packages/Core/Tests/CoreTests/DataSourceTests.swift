@@ -11,15 +11,13 @@ import Testing
 
 struct DataSourceTests {
 
+    // NOTE:
+    // Add `@MainActor` for a error caused in `DataSource.fetch()`
+    // Error: Thread 1: EXC_BREAKPOINT (code=1, ...)
     @MainActor
     @Test func access() throws {
         // TODO: to extract `sut` as a `struct` variable
-        let modelConfiguration = ModelConfiguration(isStoredInMemoryOnly: true)
-        let modelContainer = try! ModelContainer(
-            for: Dummy.self,
-            configurations: modelConfiguration
-        )
-        let sut = DataSource<Dummy>(modelContext: modelContainer.mainContext)
+        let sut = try! DataSource<Dummy>(for: Dummy.self, isStoredInMemoryOnly: true)
         
         var fetchDummies = try sut.fetch(FetchDescriptor<Dummy>())
         #expect(fetchDummies.isEmpty)

@@ -10,63 +10,65 @@ import SwiftData
 import SwiftUI
 
 public struct EpisodesView: View {
-    @State private var viewModel: ViewModel
+    typealias EpisodesStore = Store<EpisodeState, EpisodeAction>
 
+    @State private var store: EpisodesStore
+    // NOTE:
+    // We need keep `EpisodeReducer` as global variable, otherwise, `self` in `EpisodeReducer.reducer`
+    // will be **null**
+    private let reducer: EpisodeReducer
+    
     public var body: some View {
         VStack {
             Text("Hello, World!")
-            Text("Episodes count: \(viewModel.store.state.episodes.count)")
-            
+            Text("isFetchingData: \(store.state.isFetchingData)")
+            Text("Episodes count: \(store.state.episodes.count)")
         }
         .onAppear {
-            viewModel.store.send(.fetchData(isForce: false))
+            Task { [store] in
+                await store.send(.fetchData(isForce: true))
+            }
         }
     }
     
-    public init(viewModel: EpisodesView.ViewModel) {
-        self.viewModel = viewModel
+    public init(htmlConverter: HtmlConverter, episodeDataSource: DataSource<Episode>?) {
+        self.reducer = EpisodeReducer(
+            htmlConverter: htmlConverter,
+            episodeDataSource: episodeDataSource
+        )
+        self.store = EpisodesStore(initialState: EpisodeState(), reducer: reducer.reducer)
     }
 }
 
 extension EpisodesView {
-    // Add `@MainActor` for a error caused by `Task` in `reducer()`
-    // Error: Passing closure as a 'sending' parameter risks causing data races between code in the
-    // current task and concurrent execution of the closure
+    struct EpisodeState {
+        let isFetchingData: Bool
+        let episodes: [Episode]
+        let fetchDataError: Error?
+        
+        init(isFetchingData: Bool = false, episodes: [Episode] = [], fetchDataError: Error? = nil) {
+            self.isFetchingData = isFetchingData
+            self.episodes = episodes
+            self.fetchDataError = fetchDataError
+        }
+    }
+    
+    enum EpisodeAction {
+        case fetchData(isForce: Bool)
+    }
+    
     @MainActor
-    public struct ViewModel {
-        typealias EpisodesStore = Store<State, Action>
-        
-        lazy var store: EpisodesStore = EpisodesStore(
-            initialState: State(),
-            reducer: reducer
-        )
-        
-        struct State {
-            let isFetchingData: Bool
-            let episodes: [Episode]
-            let fetchDataError: Error?
-
-            init(isFetchingData: Bool = false, episodes: [Episode] = [], fetchDataError: Error? = nil) {
-                self.isFetchingData = isFetchingData
-                self.episodes = episodes
-                self.fetchDataError = fetchDataError
-            }
-        }
-        
-        enum Action {
-            case fetchData(isForce: Bool)
-        }
-        
+    public final class EpisodeReducer {
         let htmlConverter: HtmlConverter
         let episodeDataSource: DataSource<Episode>?
         
-        private lazy var reducer: (inout State, Action) -> Void = { [self] state, action in
+        lazy var reducer: @MainActor (inout EpisodeState, EpisodeAction) async -> Void = { [weak self] state, action in
             switch action {
             case let .fetchData(isForce):
                 if isForce {
-                    self.fetchDataFromServer(state: &state)
+                    await self?.fetchDataFromServer(state: &state)
                 } else {
-                    self.fetchDataFromDB(state: &state)
+                    await self?.fetchDataFromDB(state: &state)
                 }
             }
         }
@@ -77,47 +79,39 @@ extension EpisodesView {
             self.htmlConverter = htmlConverter
             self.episodeDataSource = episodeDataSource
         }
-
-        private func fetchDataFromDB(state: inout State) {
+        
+        private func fetchDataFromDB(state: inout EpisodeState) async {
             do {
                 let episodes = try episodeDataSource?.fetch(FetchDescriptor<Episode>())
+                // TODO: call `fetchDataFromServer()` when the latest episode has released but app
+                // doesn't download it
                 if episodes == nil || episodes?.isEmpty == true {
-                    fetchDataFromServer(state: &state)
+                    await fetchDataFromServer(state: &state)
                 } else {
-                    state = State(episodes: episodes ?? [])
+                    state = EpisodeState(episodes: episodes ?? [])
                 }
             } catch {
-                state = State(episodes: state.episodes, fetchDataError: error)
+                state = EpisodeState(episodes: state.episodes, fetchDataError: error)
             }
         }
-
-        private func fetchDataFromServer(state: inout State) {
-            // Error:
-            // Escaping closure captures 'inout' parameter 'state'
-            var state = state
-
-            // Error
-            // Non-sendable type '[Episode]' returned by implicitly asynchronous call to
-            // actor-isolated function cannot cross actor boundary
-            // Fix by `extension Episode: @unchecked Sendable {}`
-            // https://forums.developer.apple.com/forums/thread/725596?answerId=749095022#749095022
-            Task {
-                do {
-                    let htmlEpisodes = try await htmlConverter.loadEpisodes()
-                    try episodeDataSource?.add(htmlEpisodes)
-                    let episodes = try episodeDataSource?.fetch(FetchDescriptor<Episode>())
-
-                    state = State(episodes: episodes ?? htmlEpisodes)
-                } catch {
-                    state = State(episodes: state.episodes, fetchDataError: error)
-                }
+        
+        private func fetchDataFromServer(state: inout EpisodeState) async {
+            state = EpisodeState(isFetchingData: true)
+            
+            do {
+                let htmlEpisodes = try await htmlConverter.loadEpisodes()
+                try episodeDataSource?.add(htmlEpisodes)
+                let episodes = try episodeDataSource?.fetch(FetchDescriptor<Episode>())
+                
+                state = EpisodeState(episodes: episodes ?? htmlEpisodes)
+            } catch {
+                state = EpisodeState(episodes: state.episodes, fetchDataError: error)
             }
         }
     }
 }
 
 #Preview {
-    let modelContext = try! ModelContext.default(for: Episode.self, isStoredInMemoryOnly: true)
-    let episodeDataSource = DataSource<Episode>(modelContext: modelContext)
-    EpisodesView(viewModel: .init(htmlConverter: .init(), episodeDataSource: episodeDataSource))
+    let episodeDataSource = try! DataSource<Episode>(for: Episode.self, isStoredInMemoryOnly: true)
+    EpisodesView(htmlConverter: .init(), episodeDataSource: episodeDataSource)
 }

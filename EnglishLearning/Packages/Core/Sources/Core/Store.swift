@@ -8,20 +8,23 @@
 import Foundation
 import Observation
 
+@MainActor
 @Observable
 public final class Store<State, Action> {
     public private(set) var state: State
-    private let reducer: (inout State, Action) -> Void
+    private let reducer: @MainActor (inout State, Action) async -> Void
 
     public init(
         initialState state: State,
-        reducer: @escaping (inout State, Action) -> Void
+        reducer: @escaping @MainActor (inout State, Action) async -> Void
     ) {
         self.state = state
         self.reducer = reducer
     }
 
-    public func send(_ action: Action) {
-        reducer(&state, action)
+    public func send(_ action: Action) async {
+        var state = state
+        await reducer(&state, action)
+        self.state = state
     }
 }

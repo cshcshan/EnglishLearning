@@ -11,7 +11,7 @@ import SwiftData
 
 @Model
 public final class Episode {
-    public var id: String?
+    @Attribute(.unique) public var id: String?
     public var title: String?
     public var desc: String?
     public var date: Date?
@@ -45,8 +45,7 @@ extension Episode {
     @MainActor
     public static let dataSource: DataSource<Episode>? = {
         do {
-            let modelContext = try ModelContext.default(for: Episode.self, isStoredInMemoryOnly: false)
-            return DataSource<Episode>(modelContext: modelContext)
+            return try DataSource<Episode>(for: Episode.self, isStoredInMemoryOnly: false)
         } catch {
             return nil
         }
