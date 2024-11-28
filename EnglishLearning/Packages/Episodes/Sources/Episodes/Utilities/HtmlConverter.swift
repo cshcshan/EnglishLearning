@@ -8,10 +8,15 @@
 import Foundation
 import SwiftSoup
 
-public actor HtmlConverter {
+public protocol HtmlConvertable {
+    @MainActor
+    func loadEpisodes() async throws -> [Episode]
+}
+
+public actor HtmlConverter: HtmlConvertable {
     public init() {}
 
-    func loadEpisodes() async throws -> [Episode] {
+    public func loadEpisodes() async throws -> [Episode] {
         guard let url = URL.episodes else { return [] }
         let (data, _) = try await URLSession.shared.data(from: url)
 

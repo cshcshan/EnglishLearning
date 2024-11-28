@@ -31,9 +31,9 @@ public struct EpisodesView: View {
         }
     }
     
-    public init(htmlConverter: HtmlConverter, episodeDataSource: DataSource<Episode>?) {
+    public init(htmlConvertable: HtmlConvertable, episodeDataSource: DataSource<Episode>?) {
         self.reducer = EpisodeReducer(
-            htmlConverter: htmlConverter,
+            htmlConvertable: htmlConvertable,
             episodeDataSource: episodeDataSource
         )
         self.store = EpisodesStore(initialState: EpisodeState(), reducer: reducer.reducer)
@@ -59,7 +59,7 @@ extension EpisodesView {
     
     @MainActor
     public final class EpisodeReducer {
-        let htmlConverter: HtmlConverter
+        let htmlConvertable: HtmlConvertable
         let episodeDataSource: DataSource<Episode>?
         
         lazy var reducer: @MainActor (inout EpisodeState, EpisodeAction) async -> Void = { [weak self] state, action in
@@ -75,8 +75,8 @@ extension EpisodesView {
         
         // MARK: - Initializers
         
-        public init(htmlConverter: HtmlConverter, episodeDataSource: DataSource<Episode>?) {
-            self.htmlConverter = htmlConverter
+        public init(htmlConvertable: HtmlConvertable, episodeDataSource: DataSource<Episode>?) {
+            self.htmlConvertable = htmlConvertable
             self.episodeDataSource = episodeDataSource
         }
         
@@ -99,7 +99,7 @@ extension EpisodesView {
             state = EpisodeState(isFetchingData: true)
             
             do {
-                let htmlEpisodes = try await htmlConverter.loadEpisodes()
+                let htmlEpisodes = try await htmlConvertable.loadEpisodes()
                 try episodeDataSource?.add(htmlEpisodes)
                 let episodes = try episodeDataSource?.fetch(FetchDescriptor<Episode>())
                 
@@ -113,5 +113,5 @@ extension EpisodesView {
 
 #Preview {
     let episodeDataSource = try! DataSource<Episode>(for: Episode.self, isStoredInMemoryOnly: true)
-    EpisodesView(htmlConverter: .init(), episodeDataSource: episodeDataSource)
+    EpisodesView(htmlConvertable: HtmlConverter(), episodeDataSource: episodeDataSource)
 }
