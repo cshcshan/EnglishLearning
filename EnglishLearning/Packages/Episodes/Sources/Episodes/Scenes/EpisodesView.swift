@@ -10,13 +10,9 @@ import SwiftData
 import SwiftUI
 
 public struct EpisodesView: View {
-    typealias EpisodesStore = Store<EpisodeState, EpisodeAction>
+    typealias EpisodesStore = Store<EpisodesState, EpisodesAction>
 
-    @State private var store: EpisodesStore
-    // NOTE:
-    // We need keep `EpisodeReducer` as global variable, otherwise, `self` in `EpisodeReducer.reducer`
-    // will be **null**
-    private let reducer: EpisodeReducer
+    @State private(set) var store: EpisodesStore
     
     public var body: some View {
         VStack {
@@ -32,16 +28,21 @@ public struct EpisodesView: View {
     }
     
     public init(htmlConvertable: HtmlConvertable, episodeDataSource: DataSource<Episode>?) {
-        self.reducer = EpisodeReducer(
+        let reducer = EpisodesReducer()
+        let fetchEpisodeMiddleware = FetchEpisodeMiddleware(
             htmlConvertable: htmlConvertable,
             episodeDataSource: episodeDataSource
         )
-        self.store = EpisodesStore(initialState: EpisodeState(), reducer: reducer.reducer)
+        self.store = EpisodesStore(
+            initialState: EpisodesState(),
+            reducer: reducer.process,
+            middlewares: [fetchEpisodeMiddleware.process]
+        )
     }
 }
 
 extension EpisodesView {
-    struct EpisodeState {
+    struct EpisodesState {
         let isFetchingData: Bool
         let episodes: [Episode]
         let fetchDataError: Error?
@@ -53,59 +54,72 @@ extension EpisodesView {
         }
     }
     
-    enum EpisodeAction {
+    enum EpisodesAction {
         case fetchData(isForce: Bool)
+        case fetchedData(Result<[Episode], Error>)
     }
     
-    @MainActor
-    public final class EpisodeReducer {
-        let htmlConvertable: HtmlConvertable
-        let episodeDataSource: DataSource<Episode>?
-        
-        lazy var reducer: @MainActor (inout EpisodeState, EpisodeAction) async -> Void = { [weak self] state, action in
+    struct EpisodesReducer {
+        let process: Store<EpisodesState, EpisodesAction>.Reducer = { state, action in
             switch action {
             case let .fetchData(isForce):
-                if isForce {
-                    await self?.fetchDataFromServer(state: &state)
-                } else {
-                    await self?.fetchDataFromDB(state: &state)
+                return EpisodesState(isFetchingData: true)
+            case let .fetchedData(result):
+                switch result {
+                case let .success(episodes):
+                    return EpisodesState(episodes: episodes)
+                case let .failure(error):
+                    return EpisodesState(episodes: state.episodes, fetchDataError: error)
                 }
             }
         }
+    }
+    
+    @MainActor
+    final class FetchEpisodeMiddleware {
+        lazy var process: Store<EpisodesState, EpisodesAction>.Middleware = { state, action in
+            switch action {
+            case let .fetchData(isForce):
+                return isForce
+                    ? await self.fetchDataFromServer()
+                    : await self.fetchDataFromDB()
+            case .fetchedData:
+                return nil
+            }
+        }
         
-        // MARK: - Initializers
+        private let htmlConvertable: HtmlConvertable
+        private let episodeDataSource: DataSource<Episode>?
         
-        public init(htmlConvertable: HtmlConvertable, episodeDataSource: DataSource<Episode>?) {
+        init(htmlConvertable: HtmlConvertable, episodeDataSource: DataSource<Episode>?) {
             self.htmlConvertable = htmlConvertable
             self.episodeDataSource = episodeDataSource
         }
         
-        private func fetchDataFromDB(state: inout EpisodeState) async {
+        private func fetchDataFromDB() async -> EpisodesAction {
             do {
                 let episodes = try episodeDataSource?.fetch(FetchDescriptor<Episode>())
                 // TODO: call `fetchDataFromServer()` when the latest episode has released but app
                 // doesn't download it
                 if episodes == nil || episodes?.isEmpty == true {
-                    await fetchDataFromServer(state: &state)
+                    return await fetchDataFromServer()
                 } else {
-                    state = EpisodeState(episodes: episodes ?? [])
+                    return .fetchedData(.success(episodes ?? []))
                 }
             } catch {
-                state = EpisodeState(episodes: state.episodes, fetchDataError: error)
+                return .fetchedData(.failure(error))
             }
         }
         
-        private func fetchDataFromServer(state: inout EpisodeState) async {
-            state = EpisodeState(isFetchingData: true)
-            
+        private func fetchDataFromServer() async -> EpisodesAction {
             do {
                 let htmlEpisodes = try await htmlConvertable.loadEpisodes()
                 try episodeDataSource?.add(htmlEpisodes)
                 let episodes = try episodeDataSource?.fetch(FetchDescriptor<Episode>())
                 
-                state = EpisodeState(episodes: episodes ?? htmlEpisodes)
+                return .fetchedData(.success(episodes ?? htmlEpisodes))
             } catch {
-                state = EpisodeState(episodes: state.episodes, fetchDataError: error)
+                return .fetchedData(.failure(error))
             }
         }
     }
