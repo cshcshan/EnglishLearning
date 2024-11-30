@@ -41,6 +41,18 @@ public final class Episode {
 // https://forums.developer.apple.com/forums/thread/725596?answerId=749095022#749095022
 extension Episode: @unchecked Sendable {}
 
+// `Episode` conforms to `Equatable` for unit tests
+extension Episode: Equatable {
+    public static func == (lhs: Episode, rhs: Episode) -> Bool {
+        lhs.id == rhs.id
+            && lhs.title == rhs.title
+            && lhs.desc == rhs.desc
+            && lhs.date == rhs.date
+            && lhs.imageURLString == rhs.imageURLString
+            && lhs.urlString == rhs.urlString
+    }
+}
+
 extension Episode {
     @MainActor
     public static let dataSource: DataSource<Episode>? = {

@@ -66,13 +66,19 @@ extension EpisodesView {
             case let .fetchData(isForce):
                 return state
             case .setIsLoading:
-                return EpisodesState(isFetchingData: true, episodes: state.episodes)
+                return EpisodesState(
+                    isFetchingData: true, episodes: state.episodes, fetchDataError: state.fetchDataError
+                )
             case let .fetchedData(result):
                 switch result {
                 case let .success(episodes):
-                    return EpisodesState(episodes: episodes)
+                    return EpisodesState(
+                        isFetchingData: false, episodes: episodes, fetchDataError: nil
+                    )
                 case let .failure(error):
-                    return EpisodesState(episodes: state.episodes, fetchDataError: error)
+                    return EpisodesState(
+                        isFetchingData: false, episodes: state.episodes, fetchDataError: error
+                    )
                 }
             }
         }
@@ -83,7 +89,10 @@ extension EpisodesView {
         lazy var process: Store<EpisodesState, EpisodesAction>.Middleware = { state, action in
             switch action {
             case let .fetchData(isForce):
-                return isForce ? self.fetchDataFromServer() : self.fetchDataFromDB()
+                let isFetching = state.isFetchingData
+                return isForce
+                    ? self.fetchDataFromServer(withIsFetching: isFetching)
+                    : self.fetchDataFromDB(withIsFetching: isFetching)
             case .setIsLoading, .fetchedData:
                 return AsyncStream { $0.finish() }
             }
@@ -97,13 +106,13 @@ extension EpisodesView {
             self.episodeDataSource = episodeDataSource
         }
         
-        private func fetchDataFromDB() -> AsyncStream<EpisodesAction> {
+        private func fetchDataFromDB(withIsFetching isFetching: Bool) -> AsyncStream<EpisodesAction> {
             do {
                 let episodes = try episodeDataSource?.fetch(FetchDescriptor<Episode>())
                 // TODO: call `fetchDataFromServer()` when the latest episode has released but app
                 // doesn't download it
                 if episodes == nil || episodes?.isEmpty == true {
-                    return fetchDataFromServer()
+                    return fetchDataFromServer(withIsFetching: isFetching)
                 } else {
                     return AsyncStream {
                         $0.yield(.fetchedData(.success(episodes ?? [])))
@@ -118,8 +127,12 @@ extension EpisodesView {
             }
         }
         
-        private func fetchDataFromServer() -> AsyncStream<EpisodesAction> {
-            AsyncStream { continuation in
+        private func fetchDataFromServer(withIsFetching isFetching: Bool) -> AsyncStream<EpisodesAction> {
+            guard !isFetching else {
+                return AsyncStream { $0.finish() }
+            }
+            
+            return AsyncStream { continuation in
                 Task {
                     continuation.yield(.setIsLoading)
 
@@ -141,6 +154,9 @@ extension EpisodesView {
 }
 
 #Preview {
+    let episodes = [Episode].dummy(withAmount: 10)
+    let mockHtmlConverter = MockHtmlConverter()
+    Task { await mockHtmlConverter.setLoadEpisodesResult(.success(episodes)) }
     let episodeDataSource = try! DataSource<Episode>(for: Episode.self, isStoredInMemoryOnly: true)
-    EpisodesView(htmlConvertable: HtmlConverter(), episodeDataSource: episodeDataSource)
+    return EpisodesView(htmlConvertable: HtmlConverter(), episodeDataSource: episodeDataSource)
 }
