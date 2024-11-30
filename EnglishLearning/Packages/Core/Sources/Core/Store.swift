@@ -13,7 +13,7 @@ import Observation
 @Observable
 public final class Store<State: Sendable, Action: Sendable> {
     public typealias Reducer = @MainActor (State, Action) -> State
-    public typealias Middleware = @MainActor (State, Action) async -> Action?
+    public typealias Middleware = @MainActor (State, Action) -> AsyncStream<Action>
 
     public private(set) var state: State
     private let reducer: Reducer
@@ -39,15 +39,10 @@ public final class Store<State: Sendable, Action: Sendable> {
     }
     
     private func reduceMiddlewares(with action: Action) async {
-        await withTaskGroup(of: Action?.self) { group in
-            for middleware in middlewares {
-                group.addTask {
-                    return await middleware(self.state, action)
-                }
-            }
-            
-            for await case let nextAction? in group {
-                await send(nextAction)
+        for middleware in middlewares {
+            let asyncStream = middleware(state, action)
+            for await action in asyncStream {
+                await send(action)
             }
         }
     }

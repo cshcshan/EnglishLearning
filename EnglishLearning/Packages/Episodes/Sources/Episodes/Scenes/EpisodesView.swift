@@ -56,6 +56,7 @@ extension EpisodesView {
     
     enum EpisodesAction {
         case fetchData(isForce: Bool)
+        case setIsLoading
         case fetchedData(Result<[Episode], Error>)
     }
     
@@ -63,7 +64,9 @@ extension EpisodesView {
         let process: Store<EpisodesState, EpisodesAction>.Reducer = { state, action in
             switch action {
             case let .fetchData(isForce):
-                return EpisodesState(isFetchingData: true)
+                return state
+            case .setIsLoading:
+                return EpisodesState(isFetchingData: true, episodes: state.episodes)
             case let .fetchedData(result):
                 switch result {
                 case let .success(episodes):
@@ -80,11 +83,9 @@ extension EpisodesView {
         lazy var process: Store<EpisodesState, EpisodesAction>.Middleware = { state, action in
             switch action {
             case let .fetchData(isForce):
-                return isForce
-                    ? await self.fetchDataFromServer()
-                    : await self.fetchDataFromDB()
-            case .fetchedData:
-                return nil
+                return isForce ? self.fetchDataFromServer() : self.fetchDataFromDB()
+            case .setIsLoading, .fetchedData:
+                return AsyncStream { $0.finish() }
             }
         }
         
@@ -96,30 +97,44 @@ extension EpisodesView {
             self.episodeDataSource = episodeDataSource
         }
         
-        private func fetchDataFromDB() async -> EpisodesAction {
+        private func fetchDataFromDB() -> AsyncStream<EpisodesAction> {
             do {
                 let episodes = try episodeDataSource?.fetch(FetchDescriptor<Episode>())
                 // TODO: call `fetchDataFromServer()` when the latest episode has released but app
                 // doesn't download it
                 if episodes == nil || episodes?.isEmpty == true {
-                    return await fetchDataFromServer()
+                    return fetchDataFromServer()
                 } else {
-                    return .fetchedData(.success(episodes ?? []))
+                    return AsyncStream {
+                        $0.yield(.fetchedData(.success(episodes ?? [])))
+                        $0.finish()
+                    }
                 }
             } catch {
-                return .fetchedData(.failure(error))
+                return AsyncStream {
+                    $0.yield(.fetchedData(.failure(error)))
+                    $0.finish()
+                }
             }
         }
         
-        private func fetchDataFromServer() async -> EpisodesAction {
-            do {
-                let htmlEpisodes = try await htmlConvertable.loadEpisodes()
-                try episodeDataSource?.add(htmlEpisodes)
-                let episodes = try episodeDataSource?.fetch(FetchDescriptor<Episode>())
-                
-                return .fetchedData(.success(episodes ?? htmlEpisodes))
-            } catch {
-                return .fetchedData(.failure(error))
+        private func fetchDataFromServer() -> AsyncStream<EpisodesAction> {
+            AsyncStream { continuation in
+                Task {
+                    continuation.yield(.setIsLoading)
+
+                    do {
+                        let htmlEpisodes = try await htmlConvertable.loadEpisodes()
+                        try episodeDataSource?.add(htmlEpisodes)
+                        let episodes = try episodeDataSource?.fetch(FetchDescriptor<Episode>())
+                        
+                        continuation.yield(.fetchedData(.success(episodes ?? htmlEpisodes)))
+                    } catch {
+                        continuation.yield(.fetchedData(.failure(error)))
+                    }
+
+                    continuation.finish()
+                }
             }
         }
     }
