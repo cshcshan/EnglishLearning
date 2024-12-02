@@ -7,7 +7,15 @@
 
 import SwiftData
 
-public struct DataSource<Model: PersistentModel> {
+public protocol DataProvideable<Model> {
+    associatedtype Model: PersistentModel
+    
+    func fetch(_ descriptor: FetchDescriptor<Model>) throws -> [Model]
+    func add(_ models: [Model]) throws
+    func delete(_ models: [Model]) throws
+}
+
+public struct DataSource<Model: PersistentModel>: DataProvideable {
     // NOTE:
     // Although we don't access `modelContainer` in `DataSource` except `init()`, we still need to store
     // it globally, otherwise, it will be released after `init()`

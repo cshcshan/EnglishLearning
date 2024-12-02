@@ -23,6 +23,14 @@ struct EpisodesViewTests {
         let expectedStates: [EpisodesState]
         let expectedLoadEpisodesCount: Int
     }
+
+    struct ErrorArguments {
+        let isFetching: Bool
+        let isForceFetch: Bool
+        let expectedStates: [EpisodesState]
+        let expectedLoadLocalEpisodesCount: Int
+        let expectedLoadServerEpisodesCount: Int
+    }
     
     @Test(
         arguments: [
@@ -110,6 +118,62 @@ struct EpisodesViewTests {
         
         #expect(actualStates == arguments.expectedStates)
         #expect(await mockHtmlConverter.loadEpisodesCount == arguments.expectedLoadEpisodesCount)
+    }
+    
+    @Test(
+        arguments: [
+            ErrorArguments(
+                isFetching: false,
+                isForceFetch: true,
+                expectedStates: [
+                    EpisodesState(),
+                    EpisodesState(isFetchingData: true),
+                    EpisodesState(fetchDataError: DummyError.fetchServerDataError)
+                ],
+                expectedLoadLocalEpisodesCount: 0,
+                expectedLoadServerEpisodesCount: 1
+            ),
+            ErrorArguments(
+                isFetching: false,
+                isForceFetch: false,
+                expectedStates: [
+                    EpisodesState(),
+                    EpisodesState(fetchDataError: DummyError.fetchLocalDataError)
+                ],
+                expectedLoadLocalEpisodesCount: 1,
+                expectedLoadServerEpisodesCount: 0
+            )
+        ]
+    )
+    func fetchData_withError(arguments: ErrorArguments) async throws {
+        let isFetching = arguments.isFetching
+        let isForceFetch = arguments.isForceFetch
+
+        let mockHtmlConverter = MockHtmlConverter(loadEpisodesResult: .failure(.fetchServerDataError))
+        let mockDataSource = MockDataSource<Episode>(fetchResult: .failure(.fetchLocalDataError))
+        let fetchEpisodeMiddleware = EpisodesView.FetchEpisodeMiddleware(
+            htmlConvertable: mockHtmlConverter,
+            episodeDataSource: mockDataSource
+        )
+        
+        let sut = EpisodesView.EpisodesStore(
+            initialState: EpisodesView.EpisodesState(isFetchingData: isFetching),
+            reducer: EpisodesView.EpisodesReducer().process,
+            middlewares: [fetchEpisodeMiddleware.process]
+        )
+        
+        var actualStates: [EpisodesView.EpisodesState] = []
+        startObserving(sut) {
+            Task { @MainActor in
+                actualStates.append(sut.state)
+            }
+        }
+        
+        await sut.send(.fetchData(isForce: isForceFetch))
+        
+        #expect(actualStates == arguments.expectedStates)
+        #expect(mockDataSource.fetchCount == arguments.expectedLoadLocalEpisodesCount)
+        #expect(await mockHtmlConverter.loadEpisodesCount == arguments.expectedLoadServerEpisodesCount)
     }
 }
 

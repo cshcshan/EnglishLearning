@@ -7,8 +7,10 @@
 
 #if DEBUG
 
+import Core
+
 actor MockHtmlConverter: HtmlConvertable {
-    typealias LoadEpisodesResult = Result<[Episode], Error>
+    typealias LoadEpisodesResult = Result<[Episode], DummyError>
 
     var loadEpisodesResult: LoadEpisodesResult?
     private(set) var loadEpisodesCount = 0
