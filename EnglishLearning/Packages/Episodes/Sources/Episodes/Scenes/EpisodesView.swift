@@ -29,9 +29,11 @@ public struct EpisodesView: View {
     
     public init(htmlConvertable: HtmlConvertable, episodeDataSource: DataSource<Episode>?) {
         let reducer = EpisodesReducer()
+        let serverNewEpisodesChecker = ServerEpisodesChecker(episodesDataSource: episodeDataSource)
         let fetchEpisodeMiddleware = FetchEpisodeMiddleware(
             htmlConvertable: htmlConvertable,
-            episodeDataSource: episodeDataSource
+            episodeDataSource: episodeDataSource,
+            hasServerNewEpisodes: serverNewEpisodesChecker.hasServerNewEpisodes(with: Date())
         )
         self.store = EpisodesStore(
             initialState: EpisodesState(),
@@ -102,22 +104,29 @@ extension EpisodesView {
         
         private let htmlConvertable: HtmlConvertable
         private let episodeDataSource: EpisodeDataSource?
+        private let hasServerNewEpisodes: Bool
         
-        init(htmlConvertable: HtmlConvertable, episodeDataSource: EpisodeDataSource?) {
+        init(
+            htmlConvertable: HtmlConvertable,
+            episodeDataSource: EpisodeDataSource?,
+            hasServerNewEpisodes: Bool
+        ) {
             self.htmlConvertable = htmlConvertable
             self.episodeDataSource = episodeDataSource
+            self.hasServerNewEpisodes = hasServerNewEpisodes
         }
         
         private func fetchDataFromDB(withIsFetching isFetching: Bool) -> AsyncStream<EpisodesAction> {
             do {
-                let episodes = try episodeDataSource?.fetch(FetchDescriptor<Episode>())
-                // TODO: call `fetchDataFromServer()` when the latest episode has released but app
-                // doesn't download it
-                if episodes == nil || episodes?.isEmpty == true {
+                guard let episodeDataSource else {
+                    return fetchDataFromServer(withIsFetching: isFetching)
+                }
+                if hasServerNewEpisodes {
                     return fetchDataFromServer(withIsFetching: isFetching)
                 } else {
+                    let episodes = try episodeDataSource.fetch(FetchDescriptor<Episode>())
                     return AsyncStream {
-                        $0.yield(.fetchedData(.success(episodes ?? [])))
+                        $0.yield(.fetchedData(.success(episodes)))
                         $0.finish()
                     }
                 }

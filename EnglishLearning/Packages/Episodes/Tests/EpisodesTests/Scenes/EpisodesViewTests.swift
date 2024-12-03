@@ -7,6 +7,7 @@
 
 import Core
 import Foundation
+import SwiftData
 import Testing
 @testable import Episodes
 
@@ -19,7 +20,7 @@ struct EpisodesViewTests {
     struct Arguments {
         let isFetching: Bool
         let isForceFetch: Bool
-        let hasLocalEpisodes: Bool
+        let hasServerNewEpisodes: Bool
         let expectedStates: [EpisodesState]
         let expectedLoadEpisodesCount: Int
     }
@@ -37,7 +38,7 @@ struct EpisodesViewTests {
             Arguments(
                 isFetching: false,
                 isForceFetch: true,
-                hasLocalEpisodes: false,
+                hasServerNewEpisodes: true,
                 expectedStates: [
                     EpisodesState(),
                     EpisodesState(isFetchingData: true),
@@ -48,7 +49,7 @@ struct EpisodesViewTests {
             Arguments(
                 isFetching: false,
                 isForceFetch: false,
-                hasLocalEpisodes: false,
+                hasServerNewEpisodes: true,
                 expectedStates: [
                     EpisodesState(),
                     EpisodesState(isFetchingData: true),
@@ -59,7 +60,7 @@ struct EpisodesViewTests {
             Arguments(
                 isFetching: false,
                 isForceFetch: false,
-                hasLocalEpisodes: true,
+                hasServerNewEpisodes: false,
                 expectedStates: [
                     EpisodesState(),
                     EpisodesState(episodes: .localEpisodes)
@@ -69,7 +70,7 @@ struct EpisodesViewTests {
             Arguments(
                 isFetching: true,
                 isForceFetch: true,
-                hasLocalEpisodes: false,
+                hasServerNewEpisodes: true,
                 expectedStates: [EpisodesState(isFetchingData: true)],
                 expectedLoadEpisodesCount: 0
             ),
@@ -77,7 +78,7 @@ struct EpisodesViewTests {
             Arguments(
                 isFetching: false,
                 isForceFetch: true,
-                hasLocalEpisodes: true,
+                hasServerNewEpisodes: false,
                 expectedStates: [
                     EpisodesState(),
                     EpisodesState(isFetchingData: true),
@@ -90,14 +91,16 @@ struct EpisodesViewTests {
     func fetchData(arguments: Arguments) async throws {
         let isFetching = arguments.isFetching
         let isForceFetch = arguments.isForceFetch
-        let localEpisodes: [Episode] = arguments.hasLocalEpisodes ? .localEpisodes : []
+        let localEpisodes: [Episode] = .localEpisodes
         let serverEpisodes: [Episode] = .serverEpisodes
+        let hasServerNewEpisodes = arguments.hasServerNewEpisodes
 
         let mockHtmlConverter = MockHtmlConverter()
         let mockDataSource = try DataSource<Episode>.mock(with: localEpisodes)
         let fetchEpisodeMiddleware = EpisodesView.FetchEpisodeMiddleware(
             htmlConvertable: mockHtmlConverter,
-            episodeDataSource: mockDataSource
+            episodeDataSource: mockDataSource,
+            hasServerNewEpisodes: hasServerNewEpisodes
         )
         
         let sut = EpisodesView.EpisodesStore(
@@ -153,7 +156,8 @@ struct EpisodesViewTests {
         let mockDataSource = MockDataSource<Episode>(fetchResult: .failure(.fetchLocalDataError))
         let fetchEpisodeMiddleware = EpisodesView.FetchEpisodeMiddleware(
             htmlConvertable: mockHtmlConverter,
-            episodeDataSource: mockDataSource
+            episodeDataSource: mockDataSource,
+            hasServerNewEpisodes: false
         )
         
         let sut = EpisodesView.EpisodesStore(
