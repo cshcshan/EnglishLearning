@@ -26,5 +26,6 @@ let package = Package(
             dependencies: ["Episodes"],
             resources: [.process("Resources")]
         ),
-    ]
+    ],
+    swiftLanguageModes: [.v6]
 )
