@@ -5,6 +5,7 @@
 //  Created by Han Chen on 2024/11/23.
 //
 
+import Core
 import Foundation
 import SwiftSoup
 
@@ -14,9 +15,15 @@ public protocol HtmlConvertable {
 }
 
 public actor HtmlConverter: HtmlConvertable {
-    public init() {}
+    private let log: Log
+
+    public init() {
+        log = Log(subsystem: "Episodes", category: "HtmlConverter")
+    }
 
     public func loadEpisodes() async throws -> [Episode] {
+        await log.add(message: "Enter HtmlConvertable.loadEpisodes()")
+
         guard let url = URL.episodes else { return [] }
         let (data, _) = try await URLSession.shared.data(from: url)
 
@@ -26,9 +33,11 @@ public actor HtmlConverter: HtmlConvertable {
     
     func convertHtmlToEpisodes(withHtml htmlString: String) throws -> [Episode] {
         let document = try SwiftSoup.parse(htmlString)
-        let elements = try document.select("[data-widget-index=\"5\"] li.course-content-item")
+
+        let topElement: Episode? = try document.select(#"[data-widget-index="4"]"#).first()?.episode
+        let elements = try document.select(#"[data-widget-index="5"] li.course-content-item"#)
         
-        return elements.compactMap { try? $0.episode }
+        return [topElement].compactMap { $0 } + elements.compactMap { try? $0.episode }
     }
 }
 
