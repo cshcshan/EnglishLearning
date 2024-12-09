@@ -15,16 +15,14 @@ public struct EpisodesView: View {
     @State private(set) var store: EpisodesStore
     
     public var body: some View {
-        VStack {
-            Text("Hello, World!")
-            Text("isFetchingData: \(store.state.isFetchingData)")
-            Text("Episodes count: \(store.state.episodes.count)")
+        List(store.state.episodes) { episode in
+            EpisodeView(episode: episode)
+                .listRowSeparator(.hidden)
         }
-        .onAppear {
-            Task { [store] in
-                await store.send(.fetchData(isForce: true))
-            }
+        .task {
+            await store.send(.fetchData(isForce: false))
         }
+        .listStyle(.plain)
     }
     
     public init(htmlConvertable: HtmlConvertable, episodeDataSource: DataSource<Episode>?) {
@@ -102,6 +100,10 @@ extension EpisodesView {
             }
         }
         
+        private let fetchEpisodesDescriptor = FetchDescriptor<Episode>(
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+
         private let htmlConvertable: HtmlConvertable
         private let episodeDataSource: EpisodeDataSource?
         private let hasServerNewEpisodes: Bool
@@ -124,7 +126,7 @@ extension EpisodesView {
                 if hasServerNewEpisodes {
                     return fetchDataFromServer(withIsFetching: isFetching)
                 } else {
-                    let episodes = try episodeDataSource.fetch(FetchDescriptor<Episode>())
+                    let episodes = try episodeDataSource.fetch(fetchEpisodesDescriptor)
                     return AsyncStream {
                         $0.yield(.fetchedData(.success(episodes)))
                         $0.finish()
@@ -150,7 +152,7 @@ extension EpisodesView {
                     do {
                         let htmlEpisodes = try await htmlConvertable.loadEpisodes()
                         try episodeDataSource?.add(htmlEpisodes)
-                        let episodes = try episodeDataSource?.fetch(FetchDescriptor<Episode>())
+                        let episodes = try episodeDataSource?.fetch(fetchEpisodesDescriptor)
                         
                         continuation.yield(.fetchedData(.success(episodes ?? htmlEpisodes)))
                     } catch {

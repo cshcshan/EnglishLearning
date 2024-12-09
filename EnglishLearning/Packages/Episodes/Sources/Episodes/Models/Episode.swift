@@ -35,6 +35,17 @@ public final class Episode {
     }
 }
 
+extension Episode {
+    var displayDateString: String? {
+        guard let date else { return nil }
+        return DateFormatter.displayDate.string(from: date)
+    }
+    
+    var imageURL: URL? {
+        URL(string: imageURLString ?? "")
+    }
+}
+
 // NOTE:
 // Non-sendable type '[Episode]' returned by implicitly asynchronous call to actor-isolated function
 // cannot cross actor boundary

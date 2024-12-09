@@ -6,12 +6,14 @@
 //
 
 import SwiftUI
+import Episodes
 
 @main
 struct EnglishLearningApp: App {
+    @MainActor
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            EpisodesView(htmlConvertable: HtmlConverter(), episodeDataSource: Episode.dataSource)
         }
     }
 }
