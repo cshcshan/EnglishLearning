@@ -11,7 +11,7 @@ import Testing
 
 struct HtmlConverterTests {
 
-    @Test func loadEpisodes() async throws {
+    @Test func convertHtmlToEpisodes() async throws {
         let htmlPathURL = Bundle.module.url(forResource: "Episodes", withExtension: "html")!
         let htmlString = try String(contentsOf: htmlPathURL, encoding: .utf8)
         let sut = HtmlConverter()
@@ -33,6 +33,24 @@ struct HtmlConverterTests {
         #expect(secondEpisode.imageURLString == "https://ichef.bbci.co.uk/images/ic/624xn/p0jyf8vv.jpg")
         #expect(
             secondEpisode.urlString == "/learningenglish/english/features/6-minute-english_2024/ep-241114"
+        )
+    }
+
+    @Test func convertHtmlToEpisodeDetail() async throws {
+        let htmlPathURL = Bundle.module.url(forResource: "EpisodeDetail", withExtension: "html")!
+        let htmlString = try String(contentsOf: htmlPathURL, encoding: .utf8)
+        let sut = HtmlConverter()
+        let episodeDetail = try await sut.convertHtmlToEpisodeDetail(
+            withID: "Episode 241114",
+            htmlString: htmlString
+        )
+
+        #expect(episodeDetail.id == "Episode 241114")
+        #expect(
+            episodeDetail.audioLink == "https://downloads.bbc.co.uk/learningenglish/features/6min/241114_6_minute_english_the_bond_between_sisters_download.mp3"
+        )
+        #expect(
+            episodeDetail.pdfLink == "https://downloads.bbc.co.uk/learningenglish/features/6min/241114_6_minute_english_the_bond_between_sisters__transcript.pdf"
         )
     }
 

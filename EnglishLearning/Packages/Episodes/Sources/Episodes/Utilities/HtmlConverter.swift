@@ -24,10 +24,14 @@ public actor HtmlConverter: HtmlConvertable {
     public func loadEpisodes() async throws -> [Episode] {
         await log.add(message: "Enter HtmlConvertable.loadEpisodes()")
 
-        guard let url = URL.episodes else { return [] }
+        guard let url = URL.episodes else {
+            throw HtmlConverterError.episodesURLIncorrect
+        }
         let (data, _) = try await URLSession.shared.data(from: url)
 
-        guard let htmlString = String(data: data, encoding: .utf8) else { return [] }
+        guard let htmlString = String(data: data, encoding: .utf8) else {
+            throw HtmlConverterError.episodesDataIncorrect
+        }
         return try convertHtmlToEpisodes(withHtml: htmlString)
     }
     
@@ -41,9 +45,40 @@ public actor HtmlConverter: HtmlConvertable {
     }
 }
 
+// MARK: - loadEpisodeDetail
+
+extension HtmlConverter {
+    
+    func loadEpisodeDetail(withID id: String?, path: String?) async throws -> EpisodeDetail? {
+        await log.add(message: "Enter HtmlConvertable.loadEpisodeDetail()")
+        
+        guard let id else {
+            throw HtmlConverterError.episodeDetailIDNull
+        }
+
+        guard let path, let url = URL.episodeDomain?.appending(path: path) else {
+            throw HtmlConverterError.episodeDetailURLIncorrect
+        }
+        let (data, _) = try await URLSession.shared.data(from: url)
+        
+        guard let htmlString = String(data: data, encoding: .utf8) else {
+            throw HtmlConverterError.episodeDetailDataIncorrect
+        }
+        return try convertHtmlToEpisodeDetail(withID: id, htmlString: htmlString)
+    }
+    
+    func convertHtmlToEpisodeDetail(withID id: String, htmlString: String) throws -> EpisodeDetail {
+        let document = try SwiftSoup.parse(htmlString)
+        return try document.episodeDetail(withID: id)
+    }
+}
+
 // MARK: - SwiftSoup.Element
 
 extension SwiftSoup.Element {
+
+    // MARK: Episodes
+    
     fileprivate var episode: Episode {
         get throws {
             Episode(
@@ -104,6 +139,62 @@ extension SwiftSoup.Element {
             try select("div.text > h2 > a").first()?.attr("href").trimmingCharacters(in: .whitespacesAndNewlines)
         }
     }
+}
+
+// MARK: - SwiftSoup.Document
+
+extension SwiftSoup.Document {
+    
+    // MARK: Episode Detail
+    
+    fileprivate func episodeDetail(withID id: String) throws -> EpisodeDetail {
+        EpisodeDetail(
+            id: id,
+            audioLink: try episodeDetailAudioLink,
+            pdfLink: try episodeDetailScriptPDFLink,
+            scriptHtml: try episodeDetailScriptHtml
+        )
+    }
+    
+    private var episodeDetailScriptHtml: String? {
+        get throws {
+            guard let script = try select("div.6 > div.text").first() else { return nil }
+            if let ulNode = try script.select("ul").first() {
+                try script.removeChild(ulNode)
+            }
+            return try script.html()
+        }
+    }
+    
+    private var episodeDetailAudioLink: String? {
+        get throws {
+            guard let link = try select("a.bbcle-download-extension-mp3").first() else {
+                return nil
+            }
+            return try link.attr("href").trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+    }
+    
+    private var episodeDetailScriptPDFLink: String? {
+        get throws {
+            guard let script = try select("div.6 > div.text").first() else { return nil }
+
+            let url = try script.select("a")
+                .filter { try $0.text().lowercased().contains("transcript") }
+                .compactMap { try? $0.attr("href") }
+                .compactMap { URL.init(string: $0) }
+                .first { $0.pathExtension == "pdf" }
+            return url?.absoluteString
+        }
+    }
+}
+
+enum HtmlConverterError: Error {
+    case episodesURLIncorrect
+    case episodesDataIncorrect
+    case episodeDetailIDNull
+    case episodeDetailURLIncorrect
+    case episodeDetailDataIncorrect
 }
 
 // MARK: - DateFormatter

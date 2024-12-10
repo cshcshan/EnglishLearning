@@ -8,6 +8,8 @@
 import Foundation
 
 extension URL {
+    static let episodeDomain = URL(string: "http://www.bbc.co.uk")
+
     static let episodes = URL(
         string: "http://www.bbc.co.uk/learningenglish/english/features/6-minute-english"
     )
