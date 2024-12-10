@@ -23,6 +23,9 @@ public struct EpisodesView: View {
             await store.send(.fetchData(isForce: false))
         }
         .listStyle(.plain)
+        // Add the smallest positive integer to avoid the content in the scrollView overlay with
+        // status bar when scrolling up
+        .padding(.top, 1)
     }
     
     public init(htmlConvertable: HtmlConvertable, episodeDataSource: DataSource<Episode>?) {
