@@ -17,7 +17,11 @@ public struct EpisodesView: View {
     public var body: some View {
         NavigationStack {
             List(store.state.episodes) { episode in
-                NavigationLink(value: episode) {
+                ZStack {
+                    // Because `NavigationLink` adds `>` symbol for each item, so using put `EpisodeView`
+                    // overlay the `NavigationLink` instead put `EpisodeView` inside `NavigationLink`
+                    // directly
+                    NavigationLink(value: episode) { EmptyView() }.opacity(0)
                     EpisodeView(episode: episode)
                 }
                 .listRowSeparator(.hidden)
