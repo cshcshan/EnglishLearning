@@ -15,17 +15,25 @@ public struct EpisodesView: View {
     @State private(set) var store: EpisodesStore
     
     public var body: some View {
-        List(store.state.episodes) { episode in
-            EpisodeView(episode: episode)
+        NavigationStack {
+            List(store.state.episodes) { episode in
+                NavigationLink(value: episode) {
+                    EpisodeView(episode: episode)
+                }
                 .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+            }
+            .task {
+                await store.send(.fetchData(isForce: false))
+            }
+            .listStyle(.plain)
+            // Add the smallest positive integer to avoid the content in the scrollView overlay with
+            // status bar when scrolling up
+            .padding(.top, 1)
+            .navigationDestination(for: Episode.self) { episode in
+                EpisodeDetailView(episode: episode)
+            }
         }
-        .task {
-            await store.send(.fetchData(isForce: false))
-        }
-        .listStyle(.plain)
-        // Add the smallest positive integer to avoid the content in the scrollView overlay with
-        // status bar when scrolling up
-        .padding(.top, 1)
     }
     
     public init(htmlConvertable: HtmlConvertable, episodeDataSource: DataSource<Episode>?) {
