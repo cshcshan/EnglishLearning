@@ -40,6 +40,7 @@ struct EpisodeDetailViewTests {
             episodeDetailDataSource: mockDataSource,
             episode: episode
         )
+        #expect(sut.store.state.title == "Can you trust ancestry DNA kits?")
         #expect(
             sut.store.state.imageURL?.absoluteString == "https://ichef.bbci.co.uk/images/ic/1920xn/p0k67wpv.jpg"
         )
@@ -72,7 +73,7 @@ struct EpisodeDetailViewTests {
         )
 
         let sut = ViewStore(
-            initialState: ViewState(imageURL: imageURL),
+            initialState: ViewState(title: "Can you trust ancestry DNA kits?", imageURL: imageURL),
             reducer: ViewReducer().process,
             middlewares: [fetchDetailMiddleware.process]
         )

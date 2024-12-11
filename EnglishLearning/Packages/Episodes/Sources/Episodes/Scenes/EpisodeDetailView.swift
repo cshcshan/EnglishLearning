@@ -38,6 +38,7 @@ struct EpisodeDetailView: View {
                 await store.send(.fetchData)
             }
         }
+        .navigationTitle(store.state.title ?? "")
     }
     
     init(
@@ -53,7 +54,7 @@ struct EpisodeDetailView: View {
             episodePath: episode.urlString
         )
         self.store = EpisodeDetailStore(
-            initialState: ViewState(imageURL: episode.imageURL),
+            initialState: ViewState(title: episode.title, imageURL: episode.imageURL),
             reducer: reducer.process,
             middlewares: [fetchDetailMiddleware.process]
         )
@@ -62,15 +63,18 @@ struct EpisodeDetailView: View {
 
 extension EpisodeDetailView {
     struct ViewState {
+        let title: String?
         let imageURL: URL?
         let scriptAttributedString: AttributedString?
         let fetchDataError: Error?
         
         init(
+            title: String?,
             imageURL: URL?,
             scriptAttributedString: AttributedString? = nil,
             fetchDataError: Error? = nil
         ) {
+            self.title = title
             self.imageURL = imageURL
             self.scriptAttributedString = scriptAttributedString
             self.fetchDataError = fetchDataError
@@ -98,11 +102,13 @@ extension EpisodeDetailView {
                     }
                     
                     return ViewState(
+                        title: state.title,
                         imageURL: state.imageURL,
                         scriptAttributedString: attributedString ?? state.scriptAttributedString
                     )
                 case let .failure(error):
                     return ViewState(
+                        title: state.title,
                         imageURL: state.imageURL,
                         scriptAttributedString: state.scriptAttributedString,
                         fetchDataError: error
