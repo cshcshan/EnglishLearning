@@ -5,17 +5,18 @@
 //  Created by Han Chen on 2024/12/10.
 //
 
+import Core
 import Foundation
 import SwiftData
 
 @Model
-final class EpisodeDetail {
-    var id: String?
-    var audioLink: String?
-    var pdfLink: String?
-    var scriptHtml: String?
+public final class EpisodeDetail {
+    public var id: String?
+    public var audioLink: String?
+    public var pdfLink: String?
+    public var scriptHtml: String?
     
-    init(id: String?, audioLink: String?, pdfLink: String?, scriptHtml: String?) {
+    public init(id: String?, audioLink: String? = nil, pdfLink: String? = nil, scriptHtml: String? = nil) {
         self.id = id
         self.audioLink = audioLink
         self.pdfLink = pdfLink
@@ -24,3 +25,17 @@ final class EpisodeDetail {
 }
 
 extension EpisodeDetail: @unchecked Sendable {}
+
+extension EpisodeDetail {
+    @MainActor
+    static let dataSource: DataSource? = {
+        do {
+            return try DataSource(for: EpisodeDetail.self, isStoredInMemoryOnly: false)
+        } catch {
+            // TODO: Add error message to Log later since it cause a compile error
+            // `Default argument cannot be both main actor-isolated and actor-isolated`
+//            Task { Log.data.add(error: error) }
+            return nil
+        }
+    }()
+}

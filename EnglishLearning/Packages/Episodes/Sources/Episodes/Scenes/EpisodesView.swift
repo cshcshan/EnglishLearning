@@ -13,6 +13,7 @@ public struct EpisodesView: View {
     typealias EpisodesStore = Store<ViewState, ViewAction>
 
     @State private(set) var store: EpisodesStore
+    private let htmlConvertable: HtmlConvertable
     // We should store it as `EpisodesView`'s property, otherwise `FetchEpisodeMiddleware.process`'s
     // `[weak self]` will be **null**
     private let fetchEpisodeMiddleware: FetchEpisodeMiddleware
@@ -38,12 +39,18 @@ public struct EpisodesView: View {
             // status bar when scrolling up
             .padding(.top, 1)
             .navigationDestination(for: Episode.self) { episode in
-                EpisodeDetailView(episode: episode)
+                EpisodeDetailView(
+                    htmlConvertable: htmlConvertable,
+                    episodeDetailDataSource: EpisodeDetail.dataSource,
+                    episode: episode
+                )
             }
         }
     }
     
     public init(htmlConvertable: HtmlConvertable, episodeDataSource: DataSource<Episode>?) {
+        self.htmlConvertable = htmlConvertable
+
         let reducer = ViewReducer()
         let serverNewEpisodesChecker = ServerEpisodesChecker(episodesDataSource: episodeDataSource)
         self.fetchEpisodeMiddleware = FetchEpisodeMiddleware(
