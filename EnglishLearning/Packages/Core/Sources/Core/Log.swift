@@ -11,7 +11,7 @@ import OSLog
 public actor Log {
     private let logger: Logger
     
-    public init(subsystem: String, category: String) {
+    private init(subsystem: String, category: String) {
         logger = Logger(subsystem: subsystem, category: category)
     }
 
@@ -19,3 +19,12 @@ public actor Log {
         logger.log(level: level, "\(message)")
     }
 }
+
+extension Log {
+    private static let subsystem = Bundle.main.bundleIdentifier ?? ""
+    
+    public static let network = Log(subsystem: subsystem, category: "network")
+    public static let data = Log(subsystem: subsystem, category: "data")
+    public static let ui = Log(subsystem: subsystem, category: "UI")
+}
+

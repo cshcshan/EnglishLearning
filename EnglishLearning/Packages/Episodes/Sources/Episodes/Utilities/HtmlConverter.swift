@@ -18,7 +18,7 @@ public actor HtmlConverter: HtmlConvertable {
     private let log: Log
 
     public init() {
-        log = Log(subsystem: "Episodes", category: "HtmlConverter")
+        log = Log.network
     }
 
     public func loadEpisodes() async throws -> [Episode] {
