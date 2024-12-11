@@ -12,7 +12,7 @@ import SwiftUI
 struct EpisodeDetailView: View {
     typealias EpisodeDetailStore = Store<ViewState, ViewAction>
     
-    @State private var store: EpisodeDetailStore
+    @State private(set) var store: EpisodeDetailStore
 
     private let fetchDetailMiddleware: FetchDetailMiddleware
 
