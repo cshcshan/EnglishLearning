@@ -13,6 +13,9 @@ public struct EpisodesView: View {
     typealias EpisodesStore = Store<ViewState, ViewAction>
 
     @State private(set) var store: EpisodesStore
+    // We should store it as `EpisodesView`'s property, otherwise `FetchEpisodeMiddleware.process`'s
+    // `[weak self]` will be **null**
+    private let fetchEpisodeMiddleware: FetchEpisodeMiddleware
     
     public var body: some View {
         NavigationStack {
@@ -43,7 +46,7 @@ public struct EpisodesView: View {
     public init(htmlConvertable: HtmlConvertable, episodeDataSource: DataSource<Episode>?) {
         let reducer = ViewReducer()
         let serverNewEpisodesChecker = ServerEpisodesChecker(episodesDataSource: episodeDataSource)
-        let fetchEpisodeMiddleware = FetchEpisodeMiddleware(
+        self.fetchEpisodeMiddleware = FetchEpisodeMiddleware(
             htmlConvertable: htmlConvertable,
             episodeDataSource: episodeDataSource,
             hasServerNewEpisodes: serverNewEpisodesChecker.hasServerNewEpisodes(with: Date())
@@ -103,9 +106,16 @@ extension EpisodesView {
     final class FetchEpisodeMiddleware {
         typealias EpisodeDataProvideable = any DataProvideable<Episode>
         
-        lazy var process: EpisodesStore.Middleware = { state, action in
+        lazy var process: EpisodesStore.Middleware = { [weak self] state, action in
             switch action {
             case let .fetchData(isForce):
+                guard let self else {
+                    return AsyncStream {
+                        $0.yield(.fetchedData(.failure(ViewError.selfIsNull)))
+                        $0.finish()
+                    }
+                }
+
                 let isFetching = state.isFetchingData
                 return isForce
                     ? self.fetchDataFromServer(withIsFetching: isFetching)
@@ -179,6 +189,10 @@ extension EpisodesView {
             }
         }
     }
+    
+    enum ViewError: Error {
+        case selfIsNull
+    }
 }
 
 #Preview {
@@ -186,5 +200,5 @@ extension EpisodesView {
     let mockHtmlConverter = MockHtmlConverter()
     Task { await mockHtmlConverter.setLoadEpisodesResult(.success(episodes)) }
     let episodeDataSource = try! DataSource(for: Episode.self, isStoredInMemoryOnly: true)
-    return EpisodesView(htmlConvertable: HtmlConverter(), episodeDataSource: episodeDataSource)
+    return EpisodesView(htmlConvertable: mockHtmlConverter, episodeDataSource: episodeDataSource)
 }
