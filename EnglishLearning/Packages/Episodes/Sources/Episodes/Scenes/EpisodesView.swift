@@ -101,7 +101,7 @@ extension EpisodesView {
     
     @MainActor
     final class FetchEpisodeMiddleware {
-        typealias EpisodeDataSource = any DataProvideable<Episode>
+        typealias EpisodeDataProvideable = any DataProvideable<Episode>
         
         lazy var process: EpisodesStore.Middleware = { state, action in
             switch action {
@@ -120,12 +120,12 @@ extension EpisodesView {
         )
 
         private let htmlConvertable: HtmlConvertable
-        private let episodeDataSource: EpisodeDataSource?
+        private let episodeDataSource: EpisodeDataProvideable?
         private let hasServerNewEpisodes: Bool
         
         init(
             htmlConvertable: HtmlConvertable,
-            episodeDataSource: EpisodeDataSource?,
+            episodeDataSource: EpisodeDataProvideable?,
             hasServerNewEpisodes: Bool
         ) {
             self.htmlConvertable = htmlConvertable
