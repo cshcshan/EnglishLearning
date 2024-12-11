@@ -185,6 +185,6 @@ extension EpisodesView {
     let episodes = [Episode].dummy(withAmount: 10)
     let mockHtmlConverter = MockHtmlConverter()
     Task { await mockHtmlConverter.setLoadEpisodesResult(.success(episodes)) }
-    let episodeDataSource = try! DataSource<Episode>(for: Episode.self, isStoredInMemoryOnly: true)
+    let episodeDataSource = try! DataSource(for: Episode.self, isStoredInMemoryOnly: true)
     return EpisodesView(htmlConvertable: HtmlConverter(), episodeDataSource: episodeDataSource)
 }

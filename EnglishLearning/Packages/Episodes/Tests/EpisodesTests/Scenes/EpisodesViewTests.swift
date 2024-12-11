@@ -199,7 +199,7 @@ extension EpisodesViewTests {
 extension DataSource<Episode> {
     @MainActor
     fileprivate static func mock(with episodes: [Episode] = []) throws -> Self {
-        let mockDataSource = try DataSource<Episode>(for: Episode.self, isStoredInMemoryOnly: true)
+        let mockDataSource = try DataSource(for: Episode.self, isStoredInMemoryOnly: true)
         if !episodes.isEmpty {
             try mockDataSource.add(episodes)
         }

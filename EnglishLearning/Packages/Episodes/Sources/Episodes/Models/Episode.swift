@@ -66,9 +66,9 @@ extension Episode: Equatable {
 
 extension Episode {
     @MainActor
-    public static let dataSource: DataSource<Episode>? = {
+    public static let dataSource: DataSource? = {
         do {
-            return try DataSource<Episode>(for: Episode.self, isStoredInMemoryOnly: false)
+            return try DataSource(for: Episode.self, isStoredInMemoryOnly: false)
         } catch {
             return nil
         }

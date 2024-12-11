@@ -17,14 +17,14 @@ struct DataSourceTests {
     @MainActor
     @Test func access() throws {
         // TODO: to extract `sut` as a `struct` variable
-        let sut = try! DataSource<Dummy>(for: Dummy.self, isStoredInMemoryOnly: true)
+        let sut = try! DataSource(for: Dummy.self, isStoredInMemoryOnly: true)
         
-        var fetchDummies = try sut.fetch(FetchDescriptor<Dummy>())
+        var fetchDummies = try sut.fetch(FetchDescriptor())
         #expect(fetchDummies.isEmpty)
 
         let insertDummies = [Dummy].dummies
         try sut.add(insertDummies)
-        fetchDummies = try sut.fetch(FetchDescriptor<Dummy>())
+        fetchDummies = try sut.fetch(FetchDescriptor())
         #expect(fetchDummies.count == 3)
     }
 
