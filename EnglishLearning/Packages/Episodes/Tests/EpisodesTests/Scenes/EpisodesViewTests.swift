@@ -13,22 +13,22 @@ import Testing
 
 @MainActor
 struct EpisodesViewTests {
-    typealias EpisodesStore = EpisodesView.EpisodesStore
-    typealias EpisodesState = EpisodesView.EpisodesState
-    typealias EpisodesReducer = EpisodesView.EpisodesReducer
+    typealias ViewStore = EpisodesView.EpisodesStore
+    typealias ViewState = EpisodesView.ViewState
+    typealias ViewReducer = EpisodesView.ViewReducer
     
     struct Arguments {
         let isFetching: Bool
         let isForceFetch: Bool
         let hasServerNewEpisodes: Bool
-        let expectedStates: [EpisodesState]
+        let expectedStates: [ViewState]
         let expectedLoadEpisodesCount: Int
     }
 
     struct ErrorArguments {
         let isFetching: Bool
         let isForceFetch: Bool
-        let expectedStates: [EpisodesState]
+        let expectedStates: [ViewState]
         let expectedLoadLocalEpisodesCount: Int
         let expectedLoadServerEpisodesCount: Int
     }
@@ -40,9 +40,9 @@ struct EpisodesViewTests {
                 isForceFetch: true,
                 hasServerNewEpisodes: true,
                 expectedStates: [
-                    EpisodesState(),
-                    EpisodesState(isFetchingData: true),
-                    EpisodesState(episodes: .serverEpisodes)
+                    ViewState(),
+                    ViewState(isFetchingData: true),
+                    ViewState(episodes: .serverEpisodes)
                 ],
                 expectedLoadEpisodesCount: 1
             ),
@@ -51,9 +51,9 @@ struct EpisodesViewTests {
                 isForceFetch: false,
                 hasServerNewEpisodes: true,
                 expectedStates: [
-                    EpisodesState(),
-                    EpisodesState(isFetchingData: true),
-                    EpisodesState(episodes: .serverEpisodes)
+                    ViewState(),
+                    ViewState(isFetchingData: true),
+                    ViewState(episodes: .serverEpisodes)
                 ],
                 expectedLoadEpisodesCount: 1
             ),
@@ -62,8 +62,8 @@ struct EpisodesViewTests {
                 isForceFetch: false,
                 hasServerNewEpisodes: false,
                 expectedStates: [
-                    EpisodesState(),
-                    EpisodesState(episodes: .localEpisodes)
+                    ViewState(),
+                    ViewState(episodes: .localEpisodes)
                 ],
                 expectedLoadEpisodesCount: 0
             ),
@@ -71,7 +71,7 @@ struct EpisodesViewTests {
                 isFetching: true,
                 isForceFetch: true,
                 hasServerNewEpisodes: true,
-                expectedStates: [EpisodesState(isFetchingData: true)],
+                expectedStates: [ViewState(isFetchingData: true)],
                 expectedLoadEpisodesCount: 0
             ),
             // Others
@@ -80,9 +80,9 @@ struct EpisodesViewTests {
                 isForceFetch: true,
                 hasServerNewEpisodes: false,
                 expectedStates: [
-                    EpisodesState(),
-                    EpisodesState(isFetchingData: true),
-                    EpisodesState(episodes: .serverEpisodes)
+                    ViewState(),
+                    ViewState(isFetchingData: true),
+                    ViewState(episodes: .serverEpisodes)
                 ],
                 expectedLoadEpisodesCount: 1
             )
@@ -103,13 +103,13 @@ struct EpisodesViewTests {
             hasServerNewEpisodes: hasServerNewEpisodes
         )
         
-        let sut = EpisodesView.EpisodesStore(
-            initialState: EpisodesView.EpisodesState(isFetchingData: isFetching),
-            reducer: EpisodesView.EpisodesReducer().process,
+        let sut = ViewStore(
+            initialState: ViewState(isFetchingData: isFetching),
+            reducer: ViewReducer().process,
             middlewares: [fetchEpisodeMiddleware.process]
         )
         
-        var actualStates: [EpisodesView.EpisodesState] = []
+        var actualStates: [ViewState] = []
         startObserving(sut) {
             Task { @MainActor in
                 actualStates.append(sut.state)
@@ -129,9 +129,9 @@ struct EpisodesViewTests {
                 isFetching: false,
                 isForceFetch: true,
                 expectedStates: [
-                    EpisodesState(),
-                    EpisodesState(isFetchingData: true),
-                    EpisodesState(fetchDataError: DummyError.fetchServerDataError)
+                    ViewState(),
+                    ViewState(isFetchingData: true),
+                    ViewState(fetchDataError: DummyError.fetchServerDataError)
                 ],
                 expectedLoadLocalEpisodesCount: 0,
                 expectedLoadServerEpisodesCount: 1
@@ -140,8 +140,8 @@ struct EpisodesViewTests {
                 isFetching: false,
                 isForceFetch: false,
                 expectedStates: [
-                    EpisodesState(),
-                    EpisodesState(fetchDataError: DummyError.fetchLocalDataError)
+                    ViewState(),
+                    ViewState(fetchDataError: DummyError.fetchLocalDataError)
                 ],
                 expectedLoadLocalEpisodesCount: 1,
                 expectedLoadServerEpisodesCount: 0
@@ -160,13 +160,13 @@ struct EpisodesViewTests {
             hasServerNewEpisodes: false
         )
         
-        let sut = EpisodesView.EpisodesStore(
-            initialState: EpisodesView.EpisodesState(isFetchingData: isFetching),
-            reducer: EpisodesView.EpisodesReducer().process,
+        let sut = ViewStore(
+            initialState: ViewState(isFetchingData: isFetching),
+            reducer: ViewReducer().process,
             middlewares: [fetchEpisodeMiddleware.process]
         )
         
-        var actualStates: [EpisodesView.EpisodesState] = []
+        var actualStates: [ViewState] = []
         startObserving(sut) {
             Task { @MainActor in
                 actualStates.append(sut.state)
@@ -182,7 +182,7 @@ struct EpisodesViewTests {
 }
 
 extension EpisodesViewTests {
-    private func startObserving(_ store: EpisodesStore, onChange: @escaping @Sendable () -> Void) {
+    private func startObserving(_ store: ViewStore, onChange: @escaping @Sendable () -> Void) {
         withObservationTracking {
             _ = store.state
         } onChange: {

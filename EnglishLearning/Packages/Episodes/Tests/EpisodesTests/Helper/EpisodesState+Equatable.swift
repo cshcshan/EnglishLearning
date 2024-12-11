@@ -7,7 +7,7 @@
 
 @testable import Episodes
 
-extension EpisodesView.EpisodesState: Equatable {
+extension EpisodesView.ViewState: Equatable {
     public static func == (lhs: Self, rhs: Self) -> Bool {
         let sortedLHSEpisodes = lhs.episodes.sorted { $0.id ?? "" < $1.id ?? "" }
         let sortedRHSEpisodes = rhs.episodes.sorted { $0.id ?? "" < $1.id ?? "" }

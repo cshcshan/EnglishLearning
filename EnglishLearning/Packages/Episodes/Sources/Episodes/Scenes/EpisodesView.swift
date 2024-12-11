@@ -10,7 +10,7 @@ import SwiftData
 import SwiftUI
 
 public struct EpisodesView: View {
-    typealias EpisodesStore = Store<EpisodesState, EpisodesAction>
+    typealias EpisodesStore = Store<ViewState, ViewAction>
 
     @State private(set) var store: EpisodesStore
     
@@ -41,7 +41,7 @@ public struct EpisodesView: View {
     }
     
     public init(htmlConvertable: HtmlConvertable, episodeDataSource: DataSource<Episode>?) {
-        let reducer = EpisodesReducer()
+        let reducer = ViewReducer()
         let serverNewEpisodesChecker = ServerEpisodesChecker(episodesDataSource: episodeDataSource)
         let fetchEpisodeMiddleware = FetchEpisodeMiddleware(
             htmlConvertable: htmlConvertable,
@@ -49,7 +49,7 @@ public struct EpisodesView: View {
             hasServerNewEpisodes: serverNewEpisodesChecker.hasServerNewEpisodes(with: Date())
         )
         self.store = EpisodesStore(
-            initialState: EpisodesState(),
+            initialState: ViewState(),
             reducer: reducer.process,
             middlewares: [fetchEpisodeMiddleware.process]
         )
@@ -57,7 +57,7 @@ public struct EpisodesView: View {
 }
 
 extension EpisodesView {
-    struct EpisodesState {
+    struct ViewState {
         let isFetchingData: Bool
         let episodes: [Episode]
         let fetchDataError: Error?
@@ -69,29 +69,29 @@ extension EpisodesView {
         }
     }
     
-    enum EpisodesAction {
+    enum ViewAction {
         case fetchData(isForce: Bool)
         case setIsLoading
         case fetchedData(Result<[Episode], Error>)
     }
     
-    struct EpisodesReducer {
-        let process: Store<EpisodesState, EpisodesAction>.Reducer = { state, action in
+    struct ViewReducer {
+        let process: EpisodesStore.Reducer = { state, action in
             switch action {
             case let .fetchData(isForce):
                 return state
             case .setIsLoading:
-                return EpisodesState(
+                return ViewState(
                     isFetchingData: true, episodes: state.episodes, fetchDataError: state.fetchDataError
                 )
             case let .fetchedData(result):
                 switch result {
                 case let .success(episodes):
-                    return EpisodesState(
+                    return ViewState(
                         isFetchingData: false, episodes: episodes, fetchDataError: nil
                     )
                 case let .failure(error):
-                    return EpisodesState(
+                    return ViewState(
                         isFetchingData: false, episodes: state.episodes, fetchDataError: error
                     )
                 }
@@ -103,7 +103,7 @@ extension EpisodesView {
     final class FetchEpisodeMiddleware {
         typealias EpisodeDataSource = any DataProvideable<Episode>
         
-        lazy var process: Store<EpisodesState, EpisodesAction>.Middleware = { state, action in
+        lazy var process: EpisodesStore.Middleware = { state, action in
             switch action {
             case let .fetchData(isForce):
                 let isFetching = state.isFetchingData
@@ -133,7 +133,7 @@ extension EpisodesView {
             self.hasServerNewEpisodes = hasServerNewEpisodes
         }
         
-        private func fetchDataFromDB(withIsFetching isFetching: Bool) -> AsyncStream<EpisodesAction> {
+        private func fetchDataFromDB(withIsFetching isFetching: Bool) -> AsyncStream<ViewAction> {
             do {
                 guard let episodeDataSource else {
                     return fetchDataFromServer(withIsFetching: isFetching)
@@ -155,7 +155,7 @@ extension EpisodesView {
             }
         }
         
-        private func fetchDataFromServer(withIsFetching isFetching: Bool) -> AsyncStream<EpisodesAction> {
+        private func fetchDataFromServer(withIsFetching isFetching: Bool) -> AsyncStream<ViewAction> {
             guard !isFetching else {
                 return AsyncStream { $0.finish() }
             }
