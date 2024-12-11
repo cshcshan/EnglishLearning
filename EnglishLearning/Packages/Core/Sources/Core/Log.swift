@@ -18,6 +18,10 @@ public actor Log {
     public func add(level: OSLogType = .default, message: String) {
         logger.log(level: level, "\(message)")
     }
+
+    public func add(error: Error) {
+        logger.log(level: .error, "\(error)")
+    }
 }
 
 extension Log {

@@ -70,6 +70,9 @@ extension Episode {
         do {
             return try DataSource(for: Episode.self, isStoredInMemoryOnly: false)
         } catch {
+            // TODO: Add error message to Log later since it cause a compile error
+            // `Default argument cannot be both main actor-isolated and actor-isolated`
+//            Task { Log.data.add(error: error) }
             return nil
         }
     }()
