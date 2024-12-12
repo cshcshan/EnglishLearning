@@ -17,6 +17,8 @@ struct EpisodeImageView: View {
         } placeholder: {
             Rectangle()
                 .fill(.gray.opacity(0.4))
+                .redacted(reason: .placeholder)
+                .shimmer()
         }
         .frame(maxWidth: .infinity)
         .aspectRatio(1920 / 1080, contentMode: .fit)
