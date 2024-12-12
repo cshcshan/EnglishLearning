@@ -31,6 +31,19 @@ struct EpisodeDetailView: View {
             }
         }
         .navigationTitle(store.state.title ?? "")
+        .errorAlert(
+            isPresented: .constant(store.state.fetchDataError != nil),
+            error: store.state.fetchDataError,
+            actions: { error in
+                Button(
+                    action: {
+                        Task { await store.send(.confirmErrorAlert) }
+                    },
+                    label: { Text("OK") }
+                )
+            },
+            message: { error in Text(error.recoverySuggestion ?? "") }
+        )
     }
     
     init(
@@ -76,6 +89,7 @@ extension EpisodeDetailView {
     enum ViewAction {
         case fetchData
         case fetchedData(Result<EpisodeDetail, Error>)
+        case confirmErrorAlert
     }
     
     struct ViewReducer {
@@ -106,6 +120,13 @@ extension EpisodeDetailView {
                         fetchDataError: error
                     )
                 }
+            case .confirmErrorAlert:
+                return ViewState(
+                    title: state.title,
+                    imageURL: state.imageURL,
+                    scriptAttributedString: state.scriptAttributedString,
+                    fetchDataError: nil
+                )
             }
         }
     }
@@ -128,7 +149,7 @@ extension EpisodeDetailView {
                     }
                 }
                 return self.fetchData(withEpisodeID: episodeID)
-            case .fetchedData:
+            case .fetchedData, .confirmErrorAlert:
                 return AsyncStream { $0.finish() }
             }
         }

@@ -85,5 +85,46 @@ struct EpisodeDetailViewTests {
         #expect(String(scriptAttributedString.characters) == "Hello Swift")
         #expect(await mockHtmlConverter.loadEpisodeDetailCount == expectedLoadEpisodeDetailCount)
     }
+    
+    func confirmErrorAlert() async throws {
+        let imageURL = URL(string: "https://ichef.bbci.co.uk/images/ic/1920xn/p0k67wpv.jpg")
+
+        let mockHtmlConverter = MockHtmlConverter()
+        let mockDataSource = try DataSource<EpisodeDetail>(
+            for: EpisodeDetail.self,
+            isStoredInMemoryOnly: true
+        )
+
+        let fetchDetailMiddleware = EpisodeDetailView.FetchDetailMiddleware(
+            htmlConvertable: mockHtmlConverter,
+            episodeDetailDataSource: mockDataSource,
+            episodeID: "Episode 241205",
+            episodePath: "/learningenglish/english/features/6-minute-english_2024/ep-241205"
+        )
+
+        let sut = ViewStore(
+            initialState: ViewState(
+                title: "Can you trust ancestry DNA kits?",
+                imageURL: imageURL,
+                scriptAttributedString: AttributedString(),
+                fetchDataError: DummyError.fetchServerDataError
+            ),
+            reducer: ViewReducer().process,
+            middlewares: [fetchDetailMiddleware.process]
+        )
+        
+        let dummyError = try #require(sut.state.fetchDataError as? DummyError)
+        #expect(dummyError == .fetchServerDataError)
+        #expect(sut.state.title == "Can you trust ancestry DNA kits?")
+        #expect(sut.state.imageURL?.absoluteString == "https://ichef.bbci.co.uk/images/ic/1920xn/p0k67wpv.jpg")
+        #expect(sut.state.scriptAttributedString != nil)
+        
+        await sut.send(.confirmErrorAlert)
+        
+        #expect(sut.state.fetchDataError == nil)
+        #expect(sut.state.title == "Can you trust ancestry DNA kits?")
+        #expect(sut.state.imageURL?.absoluteString == "https://ichef.bbci.co.uk/images/ic/1920xn/p0k67wpv.jpg")
+        #expect(sut.state.scriptAttributedString != nil)
+    }
 
 }

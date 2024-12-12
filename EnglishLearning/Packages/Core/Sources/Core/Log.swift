@@ -22,7 +22,9 @@ public actor Log {
     public func add(error: Error) {
         logger.log(level: .error, "\(error)")
         #if DEBUG
-        assertionFailure(error.localizedDescription)
+        if !(error is DummyError) {
+            assertionFailure(error.localizedDescription)
+        }
         #endif
     }
 }
