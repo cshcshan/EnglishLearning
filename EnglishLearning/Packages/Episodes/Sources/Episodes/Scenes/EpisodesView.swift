@@ -45,6 +45,19 @@ public struct EpisodesView: View {
                     episode: episode
                 )
             }
+            .errorAlert(
+                isPresented: .constant(store.state.fetchDataError != nil),
+                error: store.state.fetchDataError,
+                actions: { error in
+                    Button(
+                        action: {
+                            Task { await store.send(.confirmErrorAlert) }
+                        },
+                        label: { Text("OK") }
+                    )
+                },
+                message: { error in Text(error.recoverySuggestion ?? "") }
+            )
         }
     }
     
@@ -83,6 +96,7 @@ extension EpisodesView {
         case fetchData(isForce: Bool)
         case setIsLoading
         case fetchedData(Result<[Episode], Error>)
+        case confirmErrorAlert
     }
     
     struct ViewReducer {
@@ -105,6 +119,12 @@ extension EpisodesView {
                         isFetchingData: false, episodes: state.episodes, fetchDataError: error
                     )
                 }
+            case .confirmErrorAlert:
+                return ViewState(
+                    isFetchingData: state.isFetchingData,
+                    episodes: state.episodes,
+                    fetchDataError: nil
+                )
             }
         }
     }
@@ -127,7 +147,7 @@ extension EpisodesView {
                 return isForce
                     ? self.fetchDataFromServer(withIsFetching: isFetching)
                     : self.fetchDataFromDB(withIsFetching: isFetching)
-            case .setIsLoading, .fetchedData:
+            case .setIsLoading, .fetchedData, .confirmErrorAlert:
                 return AsyncStream { $0.finish() }
             }
         }

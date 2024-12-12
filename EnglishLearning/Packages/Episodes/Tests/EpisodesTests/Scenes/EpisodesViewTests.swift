@@ -32,6 +32,11 @@ struct EpisodesViewTests {
         let expectedLoadLocalEpisodesCount: Int
         let expectedLoadServerEpisodesCount: Int
     }
+
+    struct ConfirmErrorArguments {
+        let isFetching: Bool
+        let hasEpisodes: Bool
+    }
     
     @Test(
         arguments: [
@@ -178,6 +183,47 @@ struct EpisodesViewTests {
         #expect(actualStates == arguments.expectedStates)
         #expect(mockDataSource.fetchCount == arguments.expectedLoadLocalEpisodesCount)
         #expect(await mockHtmlConverter.loadEpisodesCount == arguments.expectedLoadServerEpisodesCount)
+    }
+    
+    @Test(
+        arguments: [
+            ConfirmErrorArguments(isFetching: false, hasEpisodes: false),
+            ConfirmErrorArguments(isFetching: false, hasEpisodes: true),
+            ConfirmErrorArguments(isFetching: true, hasEpisodes: false),
+            ConfirmErrorArguments(isFetching: true, hasEpisodes: true)
+        ]
+    )
+    func confirmErrorAlert(arguments: ConfirmErrorArguments) async throws {
+        let mockHtmlConverter = MockHtmlConverter()
+        let mockDataSource = MockDataSource<Episode>()
+        let fetchEpisodeMiddleware = EpisodesView.FetchEpisodeMiddleware(
+            htmlConvertable: mockHtmlConverter,
+            episodeDataSource: mockDataSource,
+            hasServerNewEpisodes: false
+        )
+
+        let episodes: [Episode] = arguments.hasEpisodes ? .dummy(withAmount: 10) : []
+        
+        let sut = ViewStore(
+            initialState: ViewState(
+                isFetchingData: arguments.isFetching,
+                episodes: episodes,
+                fetchDataError: DummyError.fetchServerDataError
+            ),
+            reducer: ViewReducer().process,
+            middlewares: [fetchEpisodeMiddleware.process]
+        )
+        
+        let dummyError = try #require(sut.state.fetchDataError as? DummyError)
+        #expect(dummyError == .fetchServerDataError)
+        #expect(sut.state.isFetchingData == arguments.isFetching)
+        #expect(sut.state.episodes == episodes)
+        
+        await sut.send(.confirmErrorAlert)
+        
+        #expect(sut.state.fetchDataError == nil)
+        #expect(sut.state.isFetchingData == arguments.isFetching)
+        #expect(sut.state.episodes == episodes)
     }
 }
 
