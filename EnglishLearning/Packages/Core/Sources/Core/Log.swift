@@ -21,6 +21,9 @@ public actor Log {
 
     public func add(error: Error) {
         logger.log(level: .error, "\(error)")
+        #if DEBUG
+        assertionFailure(error.localizedDescription)
+        #endif
     }
 }
 

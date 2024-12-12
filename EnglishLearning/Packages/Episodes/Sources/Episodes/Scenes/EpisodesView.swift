@@ -165,9 +165,12 @@ extension EpisodesView {
                     }
                 }
             } catch {
-                return AsyncStream {
-                    $0.yield(.fetchedData(.failure(error)))
-                    $0.finish()
+                return AsyncStream { continuation in
+                    Task {
+                        await Log.data.add(error: error)
+                        continuation.yield(.fetchedData(.failure(error)))
+                        continuation.finish()
+                    }
                 }
             }
         }
@@ -188,6 +191,7 @@ extension EpisodesView {
                         
                         continuation.yield(.fetchedData(.success(episodes ?? htmlEpisodes)))
                     } catch {
+                        await Log.network.add(error: error)
                         continuation.yield(.fetchedData(.failure(error)))
                     }
 
