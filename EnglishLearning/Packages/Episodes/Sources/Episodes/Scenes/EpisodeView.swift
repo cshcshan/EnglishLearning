@@ -12,17 +12,8 @@ struct EpisodeView: View {
 
     var body: some View {
         VStack(alignment: .leading) {
-            AsyncImage(url: episode.imageURL) { image in
-                image
-                    .resizable()
-                    .scaledToFit()
-            } placeholder: {
-                Rectangle()
-                    .fill(.gray.opacity(0.4))
-            }
-            .frame(maxWidth: .infinity)
-            .aspectRatio(1920 / 1080, contentMode: .fit)
-            .padding(.bottom, 8)
+            EpisodeImageView(imageURL: episode.imageURL)
+                .padding(.bottom, 8)    
             
             if let title = episode.title {
                 Text(title)

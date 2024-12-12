@@ -19,15 +19,7 @@ struct EpisodeDetailView: View {
     var body: some View {
         ScrollView {
             VStack {
-                AsyncImage(url: store.state.imageURL) { image in
-                    image
-                        .resizable()
-                } placeholder: {
-                    Rectangle()
-                        .fill(.gray.opacity(0.4))
-                }
-                .frame(maxWidth: .infinity)
-                .aspectRatio(1920 / 1080, contentMode: .fit)
+                EpisodeImageView(imageURL: store.state.imageURL)
                 
                 if let attributedString = store.state.scriptAttributedString {
                     Text(attributedString)
