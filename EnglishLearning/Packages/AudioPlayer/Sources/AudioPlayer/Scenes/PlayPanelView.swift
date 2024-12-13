@@ -11,6 +11,21 @@ import SwiftUI
 public struct PlayPanelView: View {
     typealias ViewStore = Store<ViewState, ViewAction>
     
+    enum SpeedRate: Float, CaseIterable {
+        case half = 0.5
+        case threeQuarters = 0.75
+        case normal = 1.0
+        case oneAndAHalf = 1.5
+        case double = 2.0
+        
+        var title: String? {
+            guard let str = NumberFormatter.default.string(from: NSNumber(value: rawValue)) else {
+                return nil
+            }
+            return "\(str)x"
+        }
+    }
+    
     @State private var store: ViewStore
     private let audioURL: URL?
     private let audioPlayerMiddleware: AudioPlayerMiddleware
@@ -35,6 +50,21 @@ public struct PlayPanelView: View {
                     Image(systemName: "goforward.\(forwardRewindSeconds)")
                 }
             }
+            
+            Picker(
+                "",
+                selection: Binding(
+                    get: { store.state.speedRate },
+                    set: { newValue in
+                        Task { await store.send(.speedRate(newValue)) }
+                    }
+                )
+            ) {
+                ForEach(SpeedRate.allCases, id: \.self) { rate in
+                    Text(rate.title ?? "")
+                }
+            }
+            .pickerStyle(.segmented)
             
             Slider(
                 value: Binding(
@@ -69,7 +99,8 @@ public struct PlayPanelView: View {
                 currentSeconds: 0,
                 totalSeconds: 0,
                 currentTime: "--:--",
-                totalTime: "--:--"
+                totalTime: "--:--",
+                speedRate: .normal
             ),
             reducer: ViewReducer().process,
             middlewares: [audioPlayerMiddleware.process]
@@ -84,6 +115,7 @@ extension PlayPanelView {
         let totalSeconds: Double
         let currentTimeString: String
         let totalTimeString: String
+        let speedRate: SpeedRate
         let playerError: Error?
         
         init(
@@ -92,6 +124,7 @@ extension PlayPanelView {
             totalSeconds: Double,
             currentTime: String,
             totalTime: String,
+            speedRate: SpeedRate,
             playerError: Error? = nil
         ) {
             self.isPlaying = isPlaying
@@ -99,6 +132,7 @@ extension PlayPanelView {
             self.totalSeconds = totalSeconds
             self.currentTimeString = currentTime
             self.totalTimeString = totalTime
+            self.speedRate = speedRate
             self.playerError = playerError
         }
     }
@@ -110,8 +144,7 @@ extension PlayPanelView {
         case forward
         case rewind
         case seek(toSeconds: Double)
-        case speedUp
-        case speedDown
+        case speedRate(SpeedRate)
         case controlError(Error)
         case updateTime(currentSeconds: Double, totalSeconds: Double)
     }
@@ -127,7 +160,6 @@ extension PlayPanelView {
                 return "\(minuteStr):\(secondStr)"
             }
             
-            // TODO: to complete it
             switch action {
             case .setupAudio:
                 return ViewState(
@@ -135,7 +167,8 @@ extension PlayPanelView {
                     currentSeconds: state.currentSeconds,
                     totalSeconds: state.totalSeconds,
                     currentTime: state.currentTimeString,
-                    totalTime: state.totalTimeString
+                    totalTime: state.totalTimeString,
+                    speedRate: state.speedRate
                 )
             case .play:
                 return ViewState(
@@ -143,7 +176,8 @@ extension PlayPanelView {
                     currentSeconds: state.currentSeconds,
                     totalSeconds: state.totalSeconds,
                     currentTime: state.currentTimeString,
-                    totalTime: state.totalTimeString
+                    totalTime: state.totalTimeString,
+                    speedRate: state.speedRate
                 )
             case .pause:
                 return ViewState(
@@ -151,14 +185,20 @@ extension PlayPanelView {
                     currentSeconds: state.currentSeconds,
                     totalSeconds: state.totalSeconds,
                     currentTime: state.currentTimeString,
-                    totalTime: state.totalTimeString
+                    totalTime: state.totalTimeString,
+                    speedRate: state.speedRate
                 )
             case .forward, .rewind, .seek:
                 return state
-            case .speedUp:
-                return state
-            case .speedDown:
-                return state
+            case let .speedRate(rate):
+                return ViewState(
+                    isPlaying: state.isPlaying,
+                    currentSeconds: state.currentSeconds,
+                    totalSeconds: state.totalSeconds,
+                    currentTime: state.currentTimeString,
+                    totalTime: state.totalTimeString,
+                    speedRate: rate
+                )
             case let .controlError(error):
                 return ViewState(
                     isPlaying: state.isPlaying,
@@ -166,6 +206,7 @@ extension PlayPanelView {
                     totalSeconds: state.totalSeconds,
                     currentTime: state.currentTimeString,
                     totalTime: state.totalTimeString,
+                    speedRate: state.speedRate,
                     playerError: error
                 )
             case let .updateTime(currentSeconds, totalSeconds):
@@ -175,6 +216,7 @@ extension PlayPanelView {
                     totalSeconds: totalSeconds,
                     currentTime: convertTime(currentSeconds),
                     totalTime: convertTime(totalSeconds),
+                    speedRate: state.speedRate,
                     playerError: state.playerError
                 )
             }
@@ -196,7 +238,6 @@ extension PlayPanelView {
 
             guard let self else { return selfNullAsyncStream }
 
-            // TODO: to complete it
             switch action {
             case let .setupAudio(url):
                 return self.setupAudio(with: url)
@@ -210,10 +251,8 @@ extension PlayPanelView {
                 return self.rewind()
             case let .seek(seconds):
                 return self.seek(to: seconds)
-            case .speedUp:
-                return AsyncStream { $0.finish() }
-            case .speedDown:
-                return AsyncStream { $0.finish() }
+            case let .speedRate(rate):
+                return self.speedRate(rate)
             case .controlError, .updateTime:
                 return AsyncStream { $0.finish() }
             }
@@ -310,6 +349,19 @@ extension PlayPanelView {
                 Task {
                     do {
                         try await audioPlayer.seek(toSeconds: second)
+                    } catch {
+                        continuation.yield(.controlError(error))
+                    }
+                    continuation.finish()
+                }
+            }
+        }
+        
+        private func speedRate(_ rate: SpeedRate) -> AsyncStream<ViewAction> {
+            AsyncStream { continuation in
+                Task {
+                    do {
+                        try await audioPlayer.speedRate(rate.rawValue)
                     } catch {
                         continuation.yield(.controlError(error))
                     }

@@ -100,6 +100,16 @@ public final actor AudioPlayer {
         player.seek(to: time)
     }
     
+    func speedRate(_ rate: Float) throws {
+        guard let player else {
+            let error = PlayerError.playerNotFound
+            Task { await Log.audio.add(error: error) }
+            throw error
+        }
+        
+        player.rate = rate
+    }
+    
     private func addTimeObserver() {
         player?.addPeriodicTimeObserver(
             forInterval: CMTime(value: 1, timescale: 1),
