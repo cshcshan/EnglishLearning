@@ -38,6 +38,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				Packages/AudioPlayer,
 			);
 			target = 333556572CF03D3F00C5F606 /* EnglishLearning */;
 		};
