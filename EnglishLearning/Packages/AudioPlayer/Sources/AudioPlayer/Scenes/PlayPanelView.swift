@@ -36,6 +36,16 @@ public struct PlayPanelView: View {
                 }
             }
             
+            Slider(
+                value: Binding(
+                    get: { store.state.currentSeconds },
+                    set: { newValue in
+                        Task { await store.send(.seek(toSeconds: newValue)) }
+                    }
+                ),
+                in: 0...store.state.totalSeconds
+            )
+            
             HStack {
                 Text(store.state.currentTimeString)
                 Spacer()
@@ -56,6 +66,8 @@ public struct PlayPanelView: View {
         self.store = ViewStore(
             initialState: ViewState(
                 isPlaying: false,
+                currentSeconds: 0,
+                totalSeconds: 0,
                 currentTime: "--:--",
                 totalTime: "--:--"
             ),
@@ -68,17 +80,23 @@ public struct PlayPanelView: View {
 extension PlayPanelView {
     struct ViewState {
         let isPlaying: Bool
+        let currentSeconds: Double
+        let totalSeconds: Double
         let currentTimeString: String
         let totalTimeString: String
         let playerError: Error?
         
         init(
             isPlaying: Bool,
+            currentSeconds: Double,
+            totalSeconds: Double,
             currentTime: String,
             totalTime: String,
             playerError: Error? = nil
         ) {
             self.isPlaying = isPlaying
+            self.currentSeconds = currentSeconds
+            self.totalSeconds = totalSeconds
             self.currentTimeString = currentTime
             self.totalTimeString = totalTime
             self.playerError = playerError
@@ -91,7 +109,7 @@ extension PlayPanelView {
         case pause
         case forward
         case rewind
-        case changeCurrentTime(seconds: CGFloat)
+        case seek(toSeconds: Double)
         case speedUp
         case speedDown
         case controlError(Error)
@@ -114,24 +132,28 @@ extension PlayPanelView {
             case .setupAudio:
                 return ViewState(
                     isPlaying: false,
+                    currentSeconds: state.currentSeconds,
+                    totalSeconds: state.totalSeconds,
                     currentTime: state.currentTimeString,
                     totalTime: state.totalTimeString
                 )
             case .play:
                 return ViewState(
                     isPlaying: true,
+                    currentSeconds: state.currentSeconds,
+                    totalSeconds: state.totalSeconds,
                     currentTime: state.currentTimeString,
                     totalTime: state.totalTimeString
                 )
             case .pause:
                 return ViewState(
                     isPlaying: false,
+                    currentSeconds: state.currentSeconds,
+                    totalSeconds: state.totalSeconds,
                     currentTime: state.currentTimeString,
                     totalTime: state.totalTimeString
                 )
-            case .forward, .rewind:
-                return state
-            case .changeCurrentTime:
+            case .forward, .rewind, .seek:
                 return state
             case .speedUp:
                 return state
@@ -140,6 +162,8 @@ extension PlayPanelView {
             case let .controlError(error):
                 return ViewState(
                     isPlaying: state.isPlaying,
+                    currentSeconds: state.currentSeconds,
+                    totalSeconds: state.totalSeconds,
                     currentTime: state.currentTimeString,
                     totalTime: state.totalTimeString,
                     playerError: error
@@ -147,6 +171,8 @@ extension PlayPanelView {
             case let .updateTime(currentSeconds, totalSeconds):
                 return ViewState(
                     isPlaying: state.isPlaying,
+                    currentSeconds: currentSeconds,
+                    totalSeconds: totalSeconds,
                     currentTime: convertTime(currentSeconds),
                     totalTime: convertTime(totalSeconds),
                     playerError: state.playerError
@@ -182,8 +208,8 @@ extension PlayPanelView {
                 return self.forward()
             case .rewind:
                 return self.rewind()
-            case let .changeCurrentTime(seconds):
-                return AsyncStream { $0.finish() }
+            case let .seek(seconds):
+                return self.seek(to: seconds)
             case .speedUp:
                 return AsyncStream { $0.finish() }
             case .speedDown:
@@ -271,6 +297,19 @@ extension PlayPanelView {
                 Task {
                     do {
                         try await audioPlayer.rewind(seconds: Double(forwardRewindSeconds))
+                    } catch {
+                        continuation.yield(.controlError(error))
+                    }
+                    continuation.finish()
+                }
+            }
+        }
+        
+        private func seek(to second: Double) -> AsyncStream<ViewAction> {
+            AsyncStream { continuation in
+                Task {
+                    do {
+                        try await audioPlayer.seek(toSeconds: second)
                     } catch {
                         continuation.yield(.controlError(error))
                     }
