@@ -242,17 +242,17 @@ extension PlayPanelView {
             case let .setupAudio(url):
                 return self.setupAudio(with: url)
             case .play:
-                return self.play()
+                return self.run { try self.audioPlayer.play() }
             case .pause:
-                return self.pause()
+                return self.run { try self.audioPlayer.pause() }
             case .forward:
-                return self.forward()
+                return self.run { try self.audioPlayer.forward(seconds: Double(self.forwardRewindSeconds)) }
             case .rewind:
-                return self.rewind()
+                return self.run { try self.audioPlayer.rewind(seconds: Double(self.forwardRewindSeconds)) }
             case let .seek(seconds):
-                return self.seek(to: seconds)
+                return self.run { try self.audioPlayer.seek(toSeconds: seconds) }
             case let .speedRate(rate):
-                return self.speedRate(rate)
+                return self.run { try self.audioPlayer.speedRate(rate.rawValue) }
             case .controlError, .updateTime:
                 return AsyncStream { $0.finish() }
             }
@@ -292,76 +292,11 @@ extension PlayPanelView {
             }
         }
         
-        private func play() -> AsyncStream<ViewAction> {
+        private func run(_ action: @escaping () async throws -> Void) -> AsyncStream<ViewAction> {
             AsyncStream { continuation in
                 Task {
                     do {
-                        try await audioPlayer.play()
-                    } catch {
-                        continuation.yield(.controlError(error))
-                    }
-                    continuation.finish()
-                }
-            }
-        }
-        
-        private func pause() -> AsyncStream<ViewAction> {
-            AsyncStream { continuation in
-                Task {
-                    do {
-                        try await audioPlayer.pause()
-                    } catch {
-                        continuation.yield(.controlError(error))
-                    }
-                    continuation.finish()
-                }
-            }
-        }
-        
-        private func forward() -> AsyncStream<ViewAction> {
-            AsyncStream { continuation in
-                Task {
-                    do {
-                        try await audioPlayer.forward(seconds: Double(forwardRewindSeconds))
-                    } catch {
-                        continuation.yield(.controlError(error))
-                    }
-                    continuation.finish()
-                }
-            }
-        }
-        
-        private func rewind() -> AsyncStream<ViewAction> {
-            AsyncStream { continuation in
-                Task {
-                    do {
-                        try await audioPlayer.rewind(seconds: Double(forwardRewindSeconds))
-                    } catch {
-                        continuation.yield(.controlError(error))
-                    }
-                    continuation.finish()
-                }
-            }
-        }
-        
-        private func seek(to second: Double) -> AsyncStream<ViewAction> {
-            AsyncStream { continuation in
-                Task {
-                    do {
-                        try await audioPlayer.seek(toSeconds: second)
-                    } catch {
-                        continuation.yield(.controlError(error))
-                    }
-                    continuation.finish()
-                }
-            }
-        }
-        
-        private func speedRate(_ rate: SpeedRate) -> AsyncStream<ViewAction> {
-            AsyncStream { continuation in
-                Task {
-                    do {
-                        try await audioPlayer.speedRate(rate.rawValue)
+                        try await action()
                     } catch {
                         continuation.yield(.controlError(error))
                     }
