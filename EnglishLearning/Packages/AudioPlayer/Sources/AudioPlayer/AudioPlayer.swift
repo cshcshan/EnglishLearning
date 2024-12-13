@@ -67,6 +67,28 @@ public final actor AudioPlayer {
         player.pause()
     }
     
+    func forward(seconds: Double = 10) throws {
+        guard let player else {
+            let error = PlayerError.playerNotFound
+            Task { await Log.audio.add(error: error) }
+            throw error
+        }
+        
+        let newSeconds = CMTimeGetSeconds(player.currentTime()) + seconds
+        try seek(toSeconds: newSeconds)
+    }
+    
+    func rewind(seconds: Double = 10) throws {
+        guard let player else {
+            let error = PlayerError.playerNotFound
+            Task { await Log.audio.add(error: error) }
+            throw error
+        }
+        
+        let newSeconds = CMTimeGetSeconds(player.currentTime()) - seconds
+        try seek(toSeconds: newSeconds)
+    }
+    
     private func addTimeObserver() {
         player?.addPeriodicTimeObserver(
             forInterval: CMTime(value: 1, timescale: 1),
@@ -80,6 +102,17 @@ public final actor AudioPlayer {
                 await self?.audioSecondsContinuation?.yield(audioSeconds)
             }
         }
+    }
+    
+    private func seek(toSeconds seconds: Double) throws {
+        guard let player else {
+            let error = PlayerError.playerNotFound
+            Task { await Log.audio.add(error: error) }
+            throw error
+        }
+
+        let time = CMTime(seconds: seconds, preferredTimescale: 1)
+        player.seek(to: time)
     }
 }
 

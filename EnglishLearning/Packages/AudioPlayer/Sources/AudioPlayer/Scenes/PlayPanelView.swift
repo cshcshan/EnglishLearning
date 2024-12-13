@@ -14,13 +14,26 @@ public struct PlayPanelView: View {
     @State private var store: ViewStore
     private let audioURL: URL?
     private let audioPlayerMiddleware: AudioPlayerMiddleware
+    private let forwardRewindSeconds: Int = 10
     
     public var body: some View {
         VStack {
-            Button {
-                Task { await store.send(store.state.isPlaying ? .pause : .play) }
-            } label: {
-                Image(systemName: store.state.isPlaying ? "pause.circle.fill" : "play.circle.fill")
+            HStack {
+                Button {
+                    Task { await store.send(.rewind) }
+                } label: {
+                    Image(systemName: "gobackward.\(forwardRewindSeconds)")
+                }
+                Button {
+                    Task { await store.send(store.state.isPlaying ? .pause : .play) }
+                } label: {
+                    Image(systemName: store.state.isPlaying ? "pause.circle.fill" : "play.circle.fill")
+                }
+                Button {
+                    Task { await store.send(.forward) }
+                } label: {
+                    Image(systemName: "goforward.\(forwardRewindSeconds)")
+                }
             }
             
             HStack {
@@ -36,7 +49,10 @@ public struct PlayPanelView: View {
     
     public init(audioURL: URL?, audioPlayer: AudioPlayer = .init()) {
         self.audioURL = audioURL
-        self.audioPlayerMiddleware = AudioPlayerMiddleware(audioPlayer: audioPlayer)
+        self.audioPlayerMiddleware = AudioPlayerMiddleware(
+            audioPlayer: audioPlayer,
+            forwardRewindSeconds: forwardRewindSeconds
+        )
         self.store = ViewStore(
             initialState: ViewState(
                 isPlaying: false,
@@ -113,9 +129,7 @@ extension PlayPanelView {
                     currentTime: state.currentTimeString,
                     totalTime: state.totalTimeString
                 )
-            case .forward:
-                return state
-            case .rewind:
+            case .forward, .rewind:
                 return state
             case .changeCurrentTime:
                 return state
@@ -144,6 +158,7 @@ extension PlayPanelView {
     @MainActor
     final class AudioPlayerMiddleware {
         private let audioPlayer: AudioPlayer
+        private let forwardRewindSeconds: Int
 
         lazy var process: ViewStore.Middleware = { [weak self] state, action in
             var selfNullAsyncStream: AsyncStream<ViewAction> {
@@ -164,9 +179,9 @@ extension PlayPanelView {
             case .pause:
                 return self.pause()
             case .forward:
-                return AsyncStream { $0.finish() }
+                return self.forward()
             case .rewind:
-                return AsyncStream { $0.finish() }
+                return self.rewind()
             case let .changeCurrentTime(seconds):
                 return AsyncStream { $0.finish() }
             case .speedUp:
@@ -178,8 +193,9 @@ extension PlayPanelView {
             }
         }
         
-        init(audioPlayer: AudioPlayer) {
+        init(audioPlayer: AudioPlayer, forwardRewindSeconds: Int) {
             self.audioPlayer = audioPlayer
+            self.forwardRewindSeconds = forwardRewindSeconds
         }
         
         private func setupAudio(with url: URL?) -> AsyncStream<ViewAction> {
@@ -229,6 +245,32 @@ extension PlayPanelView {
                 Task {
                     do {
                         try await audioPlayer.pause()
+                    } catch {
+                        continuation.yield(.controlError(error))
+                    }
+                    continuation.finish()
+                }
+            }
+        }
+        
+        private func forward() -> AsyncStream<ViewAction> {
+            AsyncStream { continuation in
+                Task {
+                    do {
+                        try await audioPlayer.forward(seconds: Double(forwardRewindSeconds))
+                    } catch {
+                        continuation.yield(.controlError(error))
+                    }
+                    continuation.finish()
+                }
+            }
+        }
+        
+        private func rewind() -> AsyncStream<ViewAction> {
+            AsyncStream { continuation in
+                Task {
+                    do {
+                        try await audioPlayer.rewind(seconds: Double(forwardRewindSeconds))
                     } catch {
                         continuation.yield(.controlError(error))
                     }
