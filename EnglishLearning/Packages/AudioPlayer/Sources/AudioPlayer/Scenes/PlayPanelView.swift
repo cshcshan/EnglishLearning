@@ -16,10 +16,18 @@ public struct PlayPanelView: View {
     private let audioPlayerMiddleware: AudioPlayerMiddleware
     
     public var body: some View {
-        Button {
-            Task { await store.send(store.state.isPlaying ? .pause : .play) }
-        } label: {
-            Image(systemName: store.state.isPlaying ? "pause.circle.fill" : "play.circle.fill")
+        VStack {
+            Button {
+                Task { await store.send(store.state.isPlaying ? .pause : .play) }
+            } label: {
+                Image(systemName: store.state.isPlaying ? "pause.circle.fill" : "play.circle.fill")
+            }
+            
+            HStack {
+                Text(store.state.currentTimeString)
+                Spacer()
+                Text(store.state.totalTimeString)
+            }
         }
         .task {
             await self.store.send(.setupAudio(audioURL))
@@ -30,7 +38,11 @@ public struct PlayPanelView: View {
         self.audioURL = audioURL
         self.audioPlayerMiddleware = AudioPlayerMiddleware(audioPlayer: audioPlayer)
         self.store = ViewStore(
-            initialState: ViewState(isPlaying: false),
+            initialState: ViewState(
+                isPlaying: false,
+                currentTime: "--:--",
+                totalTime: "--:--"
+            ),
             reducer: ViewReducer().process,
             middlewares: [audioPlayerMiddleware.process]
         )
@@ -40,10 +52,19 @@ public struct PlayPanelView: View {
 extension PlayPanelView {
     struct ViewState {
         let isPlaying: Bool
+        let currentTimeString: String
+        let totalTimeString: String
         let playerError: Error?
         
-        init(isPlaying: Bool, playerError: Error? = nil) {
+        init(
+            isPlaying: Bool,
+            currentTime: String,
+            totalTime: String,
+            playerError: Error? = nil
+        ) {
             self.isPlaying = isPlaying
+            self.currentTimeString = currentTime
+            self.totalTimeString = totalTime
             self.playerError = playerError
         }
     }
@@ -58,18 +79,40 @@ extension PlayPanelView {
         case speedUp
         case speedDown
         case controlError(Error)
+        case updateTime(currentSeconds: Double, totalSeconds: Double)
     }
     
     struct ViewReducer {
         let process: ViewStore.Reducer = { state, action in
+            let convertTime: (Double) -> String = { seconds in
+                guard !(seconds.isNaN || seconds.isInfinite) else { return "" }
+                let minute = Int(seconds / 60)
+                let second = Int(seconds.truncatingRemainder(dividingBy: 60))
+                let minuteStr = String(format: "%02d", minute)
+                let secondStr = String(format: "%02d", second)
+                return "\(minuteStr):\(secondStr)"
+            }
+            
             // TODO: to complete it
             switch action {
             case .setupAudio:
-                return ViewState(isPlaying: false)
+                return ViewState(
+                    isPlaying: false,
+                    currentTime: state.currentTimeString,
+                    totalTime: state.totalTimeString
+                )
             case .play:
-                return ViewState(isPlaying: true)
+                return ViewState(
+                    isPlaying: true,
+                    currentTime: state.currentTimeString,
+                    totalTime: state.totalTimeString
+                )
             case .pause:
-                return ViewState(isPlaying: false)
+                return ViewState(
+                    isPlaying: false,
+                    currentTime: state.currentTimeString,
+                    totalTime: state.totalTimeString
+                )
             case .forward:
                 return state
             case .rewind:
@@ -81,7 +124,19 @@ extension PlayPanelView {
             case .speedDown:
                 return state
             case let .controlError(error):
-                return ViewState(isPlaying: state.isPlaying, playerError: error)
+                return ViewState(
+                    isPlaying: state.isPlaying,
+                    currentTime: state.currentTimeString,
+                    totalTime: state.totalTimeString,
+                    playerError: error
+                )
+            case let .updateTime(currentSeconds, totalSeconds):
+                return ViewState(
+                    isPlaying: state.isPlaying,
+                    currentTime: convertTime(currentSeconds),
+                    totalTime: convertTime(totalSeconds),
+                    playerError: state.playerError
+                )
             }
         }
     }
@@ -118,7 +173,7 @@ extension PlayPanelView {
                 return AsyncStream { $0.finish() }
             case .speedDown:
                 return AsyncStream { $0.finish() }
-            case .controlError:
+            case .controlError, .updateTime:
                 return AsyncStream { $0.finish() }
             }
         }
@@ -132,10 +187,26 @@ extension PlayPanelView {
                 Task {
                     do {
                         try await audioPlayer.setupAudio(url: url)
+                        updateTime(with: continuation)
                     } catch {
                         continuation.yield(.controlError(error))
+                        continuation.finish()
                     }
-                    continuation.finish()
+                }
+            }
+        }
+        
+        private func updateTime(with continuation: AsyncStream<ViewAction>.Continuation) {
+            Task {
+                guard let audioSeconds = await audioPlayer.audioSeconds else { return }
+                
+                for await audioSeconds in audioSeconds {
+                    continuation.yield(
+                        .updateTime(
+                            currentSeconds: audioSeconds.current,
+                            totalSeconds: audioSeconds.total
+                        )
+                    )
                 }
             }
         }
