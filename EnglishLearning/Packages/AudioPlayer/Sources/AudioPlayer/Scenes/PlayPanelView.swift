@@ -32,40 +32,27 @@ public struct PlayPanelView: View {
     private let forwardRewindSeconds: Int = 10
     
     public var body: some View {
-        VStack {
-            HStack {
-                Button {
-                    Task { await store.send(.rewind) }
-                } label: {
-                    Image(systemName: "gobackward.\(forwardRewindSeconds)")
-                }
-                Button {
-                    Task { await store.send(store.state.isPlaying ? .pause : .play) }
-                } label: {
-                    Image(systemName: store.state.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                }
-                Button {
-                    Task { await store.send(.forward) }
-                } label: {
-                    Image(systemName: "goforward.\(forwardRewindSeconds)")
-                }
-            }
-            
-            Picker(
-                "",
-                selection: Binding(
-                    get: { store.state.speedRate },
-                    set: { newValue in
-                        Task { await store.send(.speedRate(newValue)) }
-                    }
+        VStack(spacing: 16) {
+            HStack(spacing: 24) {
+                buildButton(
+                    withSystemName: "gobackward.\(forwardRewindSeconds)",
+                    action: .rewind
                 )
-            ) {
-                ForEach(SpeedRate.allCases, id: \.self) { rate in
-                    Text(rate.title ?? "")
-                }
+                .frame(width: 44, height: 44)
+
+                buildButton(
+                    withSystemName: store.state.isPlaying ? "pause.circle.fill" : "play.circle.fill",
+                    action: store.state.isPlaying ? .pause : .play
+                )
+                .frame(width: 52, height: 52)
+                
+                buildButton(
+                    withSystemName: "goforward.\(forwardRewindSeconds)",
+                    action: .forward
+                )
+                .frame(width: 44, height: 44)
             }
-            .pickerStyle(.segmented)
-            
+
             Slider(
                 value: Binding(
                     get: { store.state.currentSeconds },
@@ -82,7 +69,27 @@ public struct PlayPanelView: View {
             
             HStack {
                 Text(store.state.currentTimeString)
-                Spacer()
+                
+                Menu {
+                    Picker(
+                        "",
+                        selection: Binding(
+                            get: { store.state.speedRate },
+                            set: { newValue in
+                                Task { await store.send(.speedRate(newValue)) }
+                            }
+                        )
+                    ) {
+                        ForEach(SpeedRate.allCases, id: \.self) { rate in
+                            Text(rate.title ?? "")
+                        }
+                    }
+                } label: {
+                    Text(store.state.speedRate.title ?? "")
+                        .font(.title2)
+                }
+                .frame(maxWidth: .infinity)
+                
                 Text(store.state.totalTimeString)
             }
         }
@@ -113,6 +120,19 @@ public struct PlayPanelView: View {
             reducer: ViewReducer().process,
             middlewares: [audioPlayerMiddleware.process]
         )
+    }
+    
+    private func buildButton(
+        withSystemName systemName: String,
+        action: ViewAction
+    ) -> some View {
+        Button {
+            Task { await store.send(action) }
+        } label: {
+            Image(systemName: systemName)
+                .resizable()
+                .scaledToFit()
+        }
     }
 }
 
