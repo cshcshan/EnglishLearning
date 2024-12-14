@@ -27,6 +27,7 @@ struct EpisodeDetailViewTests {
         )
         let episodeDetail = EpisodeDetail(
             id: "Episode 241205",
+            audioLink: "https://downloads.bbc.co.uk/learningenglish/features/6min/241114_6_minute_english_the_bond_between_sisters_download.mp3",
             scriptHtml: "<p>Hello Swift</p>"
         )
         let mockHtmlConverter = MockHtmlConverter(loadEpisodeDetailResult: .success(episodeDetail))
@@ -45,6 +46,7 @@ struct EpisodeDetailViewTests {
             sut.store.state.imageURL?.absoluteString == "https://ichef.bbci.co.uk/images/ic/1920xn/p0k67wpv.jpg"
         )
         #expect(sut.store.state.scriptAttributedString == nil)
+        #expect(sut.store.state.audioURL == nil)
         #expect(sut.store.state.fetchDataError == nil)
     }
     
@@ -54,6 +56,7 @@ struct EpisodeDetailViewTests {
 
         let episodeDetail = EpisodeDetail(
             id: "Episode 241205",
+            audioLink: "https://downloads.bbc.co.uk/learningenglish/features/6min/241114_6_minute_english_the_bond_between_sisters_download.mp3",
             scriptHtml: "Hello Swift"
         )
         let mockHtmlConverter = MockHtmlConverter(loadEpisodeDetailResult: .success(episodeDetail))
@@ -73,7 +76,12 @@ struct EpisodeDetailViewTests {
         )
 
         let sut = ViewStore(
-            initialState: ViewState(title: "Can you trust ancestry DNA kits?", imageURL: imageURL),
+            initialState: ViewState(
+                title: "Can you trust ancestry DNA kits?",
+                imageURL: imageURL,
+                scriptAttributedString: nil,
+                audioURL: nil
+            ),
             reducer: ViewReducer().process,
             middlewares: [fetchDetailMiddleware.process]
         )
@@ -83,6 +91,9 @@ struct EpisodeDetailViewTests {
 
         let scriptAttributedString = try #require(sut.state.scriptAttributedString)
         #expect(String(scriptAttributedString.characters) == "Hello Swift")
+        #expect(
+            sut.state.audioURL?.absoluteString == "https://downloads.bbc.co.uk/learningenglish/features/6min/241114_6_minute_english_the_bond_between_sisters_download.mp3"
+        )
         #expect(await mockHtmlConverter.loadEpisodeDetailCount == expectedLoadEpisodeDetailCount)
     }
     
@@ -106,7 +117,8 @@ struct EpisodeDetailViewTests {
             initialState: ViewState(
                 title: "Can you trust ancestry DNA kits?",
                 imageURL: imageURL,
-                scriptAttributedString: AttributedString(),
+                scriptAttributedString: nil,
+                audioURL: nil,
                 fetchDataError: DummyError.fetchServerDataError
             ),
             reducer: ViewReducer().process,
@@ -118,6 +130,9 @@ struct EpisodeDetailViewTests {
         #expect(sut.state.title == "Can you trust ancestry DNA kits?")
         #expect(sut.state.imageURL?.absoluteString == "https://ichef.bbci.co.uk/images/ic/1920xn/p0k67wpv.jpg")
         #expect(sut.state.scriptAttributedString != nil)
+        #expect(
+            sut.state.audioURL?.absoluteString == "https://downloads.bbc.co.uk/learningenglish/features/6min/241114_6_minute_english_the_bond_between_sisters_download.mp3"
+        )
         
         await sut.send(.confirmErrorAlert)
         
@@ -125,6 +140,9 @@ struct EpisodeDetailViewTests {
         #expect(sut.state.title == "Can you trust ancestry DNA kits?")
         #expect(sut.state.imageURL?.absoluteString == "https://ichef.bbci.co.uk/images/ic/1920xn/p0k67wpv.jpg")
         #expect(sut.state.scriptAttributedString != nil)
+        #expect(
+            sut.state.audioURL?.absoluteString == "https://downloads.bbc.co.uk/learningenglish/features/6min/241114_6_minute_english_the_bond_between_sisters_download.mp3"
+        )
     }
 
 }

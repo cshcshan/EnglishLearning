@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		330D4D3F2CF2169F008BE93C /* Episodes in Frameworks */ = {isa = PBXBuildFile; productRef = 330D4D3E2CF2169F008BE93C /* Episodes */; };
+		339913DF2D0DBADA008CBBEF /* AudioPlayer in Frameworks */ = {isa = PBXBuildFile; productRef = 339913DE2D0DBADA008CBBEF /* AudioPlayer */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -70,6 +71,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				339913DF2D0DBADA008CBBEF /* AudioPlayer in Frameworks */,
 				330D4D3F2CF2169F008BE93C /* Episodes in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -140,6 +142,7 @@
 			name = EnglishLearning;
 			packageProductDependencies = (
 				330D4D3E2CF2169F008BE93C /* Episodes */,
+				339913DE2D0DBADA008CBBEF /* AudioPlayer */,
 			);
 			productName = EnglishLearning;
 			productReference = 333556582CF03D3F00C5F606 /* EnglishLearning.app */;
@@ -591,6 +594,10 @@
 		330D4D3E2CF2169F008BE93C /* Episodes */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Episodes;
+		};
+		339913DE2D0DBADA008CBBEF /* AudioPlayer */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AudioPlayer;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

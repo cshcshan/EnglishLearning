@@ -14,12 +14,13 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../Core"),
+        .package(path: "../AudioPlayer"),
         .package(url: "https://github.com/scinfu/SwiftSoup", .upToNextMajor(from: "2.7.5"))
     ],
     targets: [
         .target(
             name: "Episodes",
-            dependencies: ["Core", "SwiftSoup"]
+            dependencies: ["Core", "AudioPlayer", "SwiftSoup"]
         ),
         .testTarget(
             name: "EpisodesTests",

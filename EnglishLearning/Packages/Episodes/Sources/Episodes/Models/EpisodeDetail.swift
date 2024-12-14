@@ -24,6 +24,12 @@ public final class EpisodeDetail {
     }
 }
 
+extension EpisodeDetail {
+    var audioURL: URL? {
+        URL(string: audioLink ?? "")
+    }
+}
+
 extension EpisodeDetail: @unchecked Sendable {}
 
 extension EpisodeDetail {

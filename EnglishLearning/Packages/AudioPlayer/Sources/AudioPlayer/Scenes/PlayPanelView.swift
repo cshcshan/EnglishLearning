@@ -27,7 +27,7 @@ public struct PlayPanelView: View {
     }
     
     @State private var store: ViewStore
-    private let audioURL: URL?
+    @Binding private var audioURL: URL?
     private let audioPlayerMiddleware: AudioPlayerMiddleware
     private let forwardRewindSeconds: Int = 10
     
@@ -98,10 +98,13 @@ public struct PlayPanelView: View {
         .task { await self.store.send(.observeAudioTime) }
         .task { await self.store.send(.observeBufferRate) }
         .task { await self.store.send(.setupAudio(audioURL)) }
+        .onChange(of: audioURL) {
+            Task { await self.store.send(.setupAudio(audioURL)) }
+        }
     }
     
-    public init(audioURL: URL?, audioPlayer: AudioPlayer = .init()) {
-        self.audioURL = audioURL
+    public init(audioURL: Binding<URL?>, audioPlayer: AudioPlayer = .init()) {
+        self._audioURL = audioURL
         self.audioPlayerMiddleware = AudioPlayerMiddleware(
             audioPlayer: audioPlayer,
             forwardRewindSeconds: forwardRewindSeconds
@@ -414,5 +417,5 @@ extension PlayPanelView {
     let audioURL = URL(
         string: "https://downloads.bbc.co.uk/learningenglish/features/6min/241114_6_minute_english_the_bond_between_sisters_download.mp3"
     )
-    PlayPanelView(audioURL: audioURL)
+    PlayPanelView(audioURL: Binding(get: { audioURL }, set: { _ in }))
 }

@@ -6,6 +6,7 @@
 //
 
 import Core
+import AudioPlayer
 import SwiftData
 import SwiftUI
 
@@ -13,22 +14,31 @@ struct EpisodeDetailView: View {
     typealias EpisodeDetailStore = Store<ViewState, ViewAction>
     
     @State private(set) var store: EpisodeDetailStore
+    @State private var playPanelHeight: CGFloat = 0
 
     private let fetchDetailMiddleware: FetchDetailMiddleware
 
     var body: some View {
-        ScrollView {
-            VStack {
-                EpisodeImageView(imageURL: store.state.imageURL)
-                
-                if let attributedString = store.state.scriptAttributedString {
-                    Text(attributedString)
-                        .padding(10)
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack {
+                    EpisodeImageView(imageURL: store.state.imageURL)
+                    
+                    if let attributedString = store.state.scriptAttributedString {
+                        Text(attributedString)
+                            .padding(10)
+                    }
                 }
             }
-            .task {
-                await store.send(.fetchData)
-            }
+            
+            PlayPanelView(audioURL: Binding(get: { store.state.audioURL }, set: { _ in }))
+                .padding(20)
+                .background {
+                    Color.white
+                        .shadow(radius: 8)
+                        .mask(Rectangle().padding(.top, -20))
+                        .ignoresSafeArea()
+                }
         }
         .navigationTitle(store.state.title ?? "")
         .errorAlert(
@@ -44,6 +54,7 @@ struct EpisodeDetailView: View {
             },
             message: { error in Text(error.recoverySuggestion ?? "") }
         )
+        .task { await store.send(.fetchData) }
     }
     
     init(
@@ -59,7 +70,12 @@ struct EpisodeDetailView: View {
             episodePath: episode.urlString
         )
         self.store = EpisodeDetailStore(
-            initialState: ViewState(title: episode.title, imageURL: episode.imageURL),
+            initialState: ViewState(
+                title: episode.title,
+                imageURL: episode.imageURL,
+                scriptAttributedString: nil,
+                audioURL: nil
+            ),
             reducer: reducer.process,
             middlewares: [fetchDetailMiddleware.process]
         )
@@ -71,17 +87,20 @@ extension EpisodeDetailView {
         let title: String?
         let imageURL: URL?
         let scriptAttributedString: AttributedString?
+        let audioURL: URL?
         let fetchDataError: Error?
         
         init(
             title: String?,
             imageURL: URL?,
-            scriptAttributedString: AttributedString? = nil,
+            scriptAttributedString: AttributedString?,
+            audioURL: URL?,
             fetchDataError: Error? = nil
         ) {
             self.title = title
             self.imageURL = imageURL
             self.scriptAttributedString = scriptAttributedString
+            self.audioURL = audioURL
             self.fetchDataError = fetchDataError
         }
     }
@@ -110,13 +129,15 @@ extension EpisodeDetailView {
                     return ViewState(
                         title: state.title,
                         imageURL: state.imageURL,
-                        scriptAttributedString: attributedString ?? state.scriptAttributedString
+                        scriptAttributedString: attributedString ?? state.scriptAttributedString,
+                        audioURL: episodeDetail.audioURL
                     )
                 case let .failure(error):
                     return ViewState(
                         title: state.title,
                         imageURL: state.imageURL,
                         scriptAttributedString: state.scriptAttributedString,
+                        audioURL: state.audioURL,
                         fetchDataError: error
                     )
                 }
@@ -125,6 +146,7 @@ extension EpisodeDetailView {
                     title: state.title,
                     imageURL: state.imageURL,
                     scriptAttributedString: state.scriptAttributedString,
+                    audioURL: state.audioURL,
                     fetchDataError: nil
                 )
             }
@@ -242,6 +264,7 @@ extension EpisodeDetailView {
     )
     let episodeDetail = EpisodeDetail(
         id: "Episode 241205",
+        audioLink: "https://downloads.bbc.co.uk/learningenglish/features/6min/241114_6_minute_english_the_bond_between_sisters_download.mp3",
         scriptHtml: "<p>Hello Swift</p>"
     )
 
