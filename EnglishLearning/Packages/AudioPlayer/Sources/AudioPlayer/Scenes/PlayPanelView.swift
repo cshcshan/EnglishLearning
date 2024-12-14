@@ -82,9 +82,8 @@ public struct PlayPanelView: View {
                 Text(store.state.totalTimeString)
             }
         }
-        .task {
-            await self.store.send(.setupAudio(audioURL))
-        }
+        .task { await self.store.send(.observeAudioTime) }
+        .task { await self.store.send(.setupAudio(audioURL)) }
     }
     
     public init(audioURL: URL?, audioPlayer: AudioPlayer = .init()) {
@@ -146,6 +145,7 @@ extension PlayPanelView {
         case seek(toSeconds: Double)
         case speedRate(SpeedRate)
         case controlError(Error)
+        case observeAudioTime
         case updateTime(currentSeconds: Double, totalSeconds: Double)
     }
     
@@ -188,7 +188,7 @@ extension PlayPanelView {
                     totalTime: state.totalTimeString,
                     speedRate: state.speedRate
                 )
-            case .forward, .rewind, .seek:
+            case .forward, .rewind, .seek, .observeAudioTime:
                 return state
             case let .speedRate(rate):
                 return ViewState(
@@ -240,7 +240,7 @@ extension PlayPanelView {
 
             switch action {
             case let .setupAudio(url):
-                return self.setupAudio(with: url)
+                return self.run { try self.audioPlayer.setupAudio(url: url) }
             case .play:
                 return self.run { try self.audioPlayer.play() }
             case .pause:
@@ -253,6 +253,8 @@ extension PlayPanelView {
                 return self.run { try self.audioPlayer.seek(toSeconds: seconds) }
             case let .speedRate(rate):
                 return self.run { try self.audioPlayer.speedRate(rate.rawValue) }
+            case .observeAudioTime:
+                return self.observeAudioTime()
             case .controlError, .updateTime:
                 return AsyncStream { $0.finish() }
             }
@@ -263,31 +265,18 @@ extension PlayPanelView {
             self.forwardRewindSeconds = forwardRewindSeconds
         }
         
-        private func setupAudio(with url: URL?) -> AsyncStream<ViewAction> {
+        private func observeAudioTime() -> AsyncStream<ViewAction> {
             AsyncStream { continuation in
                 Task {
-                    do {
-                        try await audioPlayer.setupAudio(url: url)
-                        updateTime(with: continuation)
-                    } catch {
-                        continuation.yield(.controlError(error))
+                    guard let audioSeconds = await audioPlayer.audioSeconds else {
                         continuation.finish()
+                        return
                     }
-                }
-            }
-        }
-        
-        private func updateTime(with continuation: AsyncStream<ViewAction>.Continuation) {
-            Task {
-                guard let audioSeconds = await audioPlayer.audioSeconds else { return }
-                
-                for await audioSeconds in audioSeconds {
-                    continuation.yield(
-                        .updateTime(
-                            currentSeconds: audioSeconds.current,
-                            totalSeconds: audioSeconds.total
+                    for await seconds in audioSeconds {
+                        continuation.yield(
+                            .updateTime(currentSeconds: seconds.current, totalSeconds: seconds.total)
                         )
-                    )
+                    }
                 }
             }
         }
