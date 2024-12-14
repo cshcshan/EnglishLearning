@@ -82,6 +82,8 @@ public struct PlayPanelView: View {
                 Text(store.state.totalTimeString)
             }
         }
+        .disabled(!store.state.canPlay)
+        .task { await self.store.send(.observeAudioStatus) }
         .task { await self.store.send(.observeAudioTime) }
         .task { await self.store.send(.setupAudio(audioURL)) }
     }
@@ -94,6 +96,7 @@ public struct PlayPanelView: View {
         )
         self.store = ViewStore(
             initialState: ViewState(
+                canPlay: false,
                 isPlaying: false,
                 currentSeconds: 0,
                 totalSeconds: 0,
@@ -109,6 +112,7 @@ public struct PlayPanelView: View {
 
 extension PlayPanelView {
     struct ViewState {
+        let canPlay: Bool
         let isPlaying: Bool
         let currentSeconds: Double
         let totalSeconds: Double
@@ -118,6 +122,7 @@ extension PlayPanelView {
         let playerError: Error?
         
         init(
+            canPlay: Bool,
             isPlaying: Bool,
             currentSeconds: Double,
             totalSeconds: Double,
@@ -126,6 +131,7 @@ extension PlayPanelView {
             speedRate: SpeedRate,
             playerError: Error? = nil
         ) {
+            self.canPlay = canPlay
             self.isPlaying = isPlaying
             self.currentSeconds = currentSeconds
             self.totalSeconds = totalSeconds
@@ -145,7 +151,9 @@ extension PlayPanelView {
         case seek(toSeconds: Double)
         case speedRate(SpeedRate)
         case controlError(Error)
+        case observeAudioStatus
         case observeAudioTime
+        case updateAudioStatus(AudioPlayer.Status)
         case updateTime(currentSeconds: Double, totalSeconds: Double)
     }
     
@@ -163,6 +171,7 @@ extension PlayPanelView {
             switch action {
             case .setupAudio:
                 return ViewState(
+                    canPlay: false,
                     isPlaying: false,
                     currentSeconds: state.currentSeconds,
                     totalSeconds: state.totalSeconds,
@@ -172,6 +181,7 @@ extension PlayPanelView {
                 )
             case .play:
                 return ViewState(
+                    canPlay: state.canPlay,
                     isPlaying: true,
                     currentSeconds: state.currentSeconds,
                     totalSeconds: state.totalSeconds,
@@ -181,6 +191,7 @@ extension PlayPanelView {
                 )
             case .pause:
                 return ViewState(
+                    canPlay: state.canPlay,
                     isPlaying: false,
                     currentSeconds: state.currentSeconds,
                     totalSeconds: state.totalSeconds,
@@ -188,10 +199,11 @@ extension PlayPanelView {
                     totalTime: state.totalTimeString,
                     speedRate: state.speedRate
                 )
-            case .forward, .rewind, .seek, .observeAudioTime:
+            case .forward, .rewind, .seek, .observeAudioStatus, .observeAudioTime:
                 return state
             case let .speedRate(rate):
                 return ViewState(
+                    canPlay: state.canPlay,
                     isPlaying: state.isPlaying,
                     currentSeconds: state.currentSeconds,
                     totalSeconds: state.totalSeconds,
@@ -201,6 +213,7 @@ extension PlayPanelView {
                 )
             case let .controlError(error):
                 return ViewState(
+                    canPlay: state.canPlay,
                     isPlaying: state.isPlaying,
                     currentSeconds: state.currentSeconds,
                     totalSeconds: state.totalSeconds,
@@ -209,8 +222,20 @@ extension PlayPanelView {
                     speedRate: state.speedRate,
                     playerError: error
                 )
+            case let .updateAudioStatus(status):
+                return ViewState(
+                    canPlay: status.canPlay,
+                    isPlaying: [.waitingToPlayAtSpecifiedRate, .playing].contains { $0 == status },
+                    currentSeconds: state.currentSeconds,
+                    totalSeconds: state.totalSeconds,
+                    currentTime: state.currentTimeString,
+                    totalTime: state.totalTimeString,
+                    speedRate: state.speedRate,
+                    playerError: state.playerError
+                )
             case let .updateTime(currentSeconds, totalSeconds):
                 return ViewState(
+                    canPlay: state.canPlay,
                     isPlaying: state.isPlaying,
                     currentSeconds: currentSeconds,
                     totalSeconds: totalSeconds,
@@ -253,9 +278,11 @@ extension PlayPanelView {
                 return self.run { try self.audioPlayer.seek(toSeconds: seconds) }
             case let .speedRate(rate):
                 return self.run { try self.audioPlayer.speedRate(rate.rawValue) }
+            case .observeAudioStatus:
+                return self.observeAudioStatus()
             case .observeAudioTime:
                 return self.observeAudioTime()
-            case .controlError, .updateTime:
+            case .controlError, .updateAudioStatus, .updateTime:
                 return AsyncStream { $0.finish() }
             }
         }
@@ -263,6 +290,20 @@ extension PlayPanelView {
         init(audioPlayer: AudioPlayer, forwardRewindSeconds: Int) {
             self.audioPlayer = audioPlayer
             self.forwardRewindSeconds = forwardRewindSeconds
+        }
+        
+        private func observeAudioStatus() -> AsyncStream<ViewAction> {
+            AsyncStream { continuation in
+                Task {
+                    guard let status = await audioPlayer.audioStatus else {
+                        continuation.finish()
+                        return
+                    }
+                    for await status in status {
+                        continuation.yield(.updateAudioStatus(status))
+                    }
+                }
+            }
         }
         
         private func observeAudioTime() -> AsyncStream<ViewAction> {

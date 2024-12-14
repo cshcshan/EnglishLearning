@@ -9,10 +9,52 @@ import Core
 import AVFoundation
 import Foundation
 
-public final actor AudioPlayer {
+// Conforms to `NSObject` for observe `status`
+public final actor AudioPlayer: NSObject {
     struct AudioSeconds {
         let current: Double
         let total: Double
+    }
+    
+    enum Status {
+        case unknown
+        case readyToPlay
+        case waitingToPlayAtSpecifiedRate
+        case playing
+        case paused
+        case failed
+        
+        var canPlay: Bool {
+            switch self {
+            case .readyToPlay, .waitingToPlayAtSpecifiedRate, .playing, .paused:
+                return true
+            case .unknown, .failed:
+                return false
+            }
+        }
+        
+        init(audioStatus: AVPlayer.Status) {
+            switch audioStatus {
+            case .unknown: self = .unknown
+            case .readyToPlay: self = .readyToPlay
+            case .failed: self = .failed
+            @unknown default: self = .unknown
+            }
+        }
+        
+        init(timeControlStatus: AVPlayer.TimeControlStatus) {
+            switch timeControlStatus {
+            case .paused: self = .paused
+            case .waitingToPlayAtSpecifiedRate: self = .waitingToPlayAtSpecifiedRate
+            case .playing: self = .playing
+            @unknown default: self = .unknown
+            }
+        }
+    }
+    
+    enum KeyPathName: String {
+        case status
+        case timeControlStatus
     }
 
     private(set) lazy var audioSeconds: AsyncStream<AudioSeconds>? = {
@@ -21,15 +63,26 @@ public final actor AudioPlayer {
         }
     }()
     private var audioSecondsContinuation: AsyncStream<AudioSeconds>.Continuation?
+
+    private(set) lazy var audioStatus: AsyncStream<Status>? = {
+        AsyncStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
+            self.audioStatusContinuation = continuation
+        }
+    }()
+    private var audioStatusContinuation: AsyncStream<Status>.Continuation?
     
     private var player: AVPlayer?
     private var playerItem: AVPlayerItem?
     
     deinit {
         audioSecondsContinuation?.finish()
+        audioStatusContinuation?.finish()
+        
+        player?.removeObserver(self, forKeyPath: KeyPathName.timeControlStatus.rawValue)
+        playerItem?.removeObserver(self, forKeyPath: KeyPathName.status.rawValue)
     }
 
-    public init() {
+    public override init() {
         do {
             try AVAudioSession.sharedInstance().setCategory(
                 .playback, options: [.allowBluetooth, .allowAirPlay]
@@ -46,7 +99,7 @@ public final actor AudioPlayer {
         playerItem = AVPlayerItem(url: url)
         player = AVPlayer(playerItem: playerItem)
         
-        addTimeObserver()
+        addObservers()
     }
     
     func play() throws {
@@ -110,7 +163,7 @@ public final actor AudioPlayer {
         player.rate = rate
     }
     
-    private func addTimeObserver() {
+    private func addObservers() {
         player?.addPeriodicTimeObserver(
             forInterval: CMTime(value: 1, timescale: 1),
             queue: .main
@@ -121,6 +174,47 @@ public final actor AudioPlayer {
                     total: CMTimeGetSeconds(self?.playerItem?.duration ?? .zero)
                 )
                 await self?.audioSecondsContinuation?.yield(audioSeconds)
+            }
+        }
+        
+        player?.addObserver(
+            self,
+            forKeyPath: KeyPathName.timeControlStatus.rawValue,
+            options: [.old, .new],
+            context: nil
+        )
+        
+        playerItem?.addObserver(
+            self,
+            forKeyPath: KeyPathName.status.rawValue,
+            options: [.old, .new],
+            context: nil
+        )
+    }
+    
+    // For observing `KeyPathName`
+    nonisolated override public func observeValue(
+        forKeyPath keyPath: String?,
+        of object: Any?,
+        change: [NSKeyValueChangeKey : Any]?,
+        context: UnsafeMutableRawPointer?
+    ) {
+        guard let keyPath, let keyPathName = KeyPathName(rawValue: keyPath) else { return }
+
+        switch keyPathName {
+        case .status:
+            Task { [weak self] in
+                guard let player = await self?.player else { return }
+
+                let status = Status(audioStatus: player.status)
+                await self?.audioStatusContinuation?.yield(status)
+            }
+        case .timeControlStatus:
+            Task { [weak self] in
+                guard let player = await self?.player else { return }
+
+                let status = Status(timeControlStatus: player.timeControlStatus)
+                await self?.audioStatusContinuation?.yield(status)
             }
         }
     }
