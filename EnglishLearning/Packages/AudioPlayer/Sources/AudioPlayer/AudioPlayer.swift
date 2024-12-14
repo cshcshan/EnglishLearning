@@ -102,13 +102,14 @@ public final actor AudioPlayer: NSObject {
         addObservers()
     }
     
-    func play() throws {
+    func play(withRate rate: Float? = nil) throws {
         guard let player else {
             let error = PlayerError.playerNotFound
             Task { await Log.audio.add(error: error) }
             throw error
         }
-        player.play()
+
+        player.rate = rate ?? 1
     }
     
     func pause() throws {
@@ -160,6 +161,8 @@ public final actor AudioPlayer: NSObject {
             throw error
         }
         
+        // If the audio is not playing but its player rate is set above 0, the audio will start
+        // playing immediately.
         player.rate = rate
     }
     

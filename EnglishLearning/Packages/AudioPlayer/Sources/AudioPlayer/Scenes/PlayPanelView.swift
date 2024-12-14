@@ -267,7 +267,7 @@ extension PlayPanelView {
             case let .setupAudio(url):
                 return self.run { try self.audioPlayer.setupAudio(url: url) }
             case .play:
-                return self.run { try self.audioPlayer.play() }
+                return self.run { try self.audioPlayer.play(withRate: state.speedRate.rawValue) }
             case .pause:
                 return self.run { try self.audioPlayer.pause() }
             case .forward:
@@ -277,7 +277,10 @@ extension PlayPanelView {
             case let .seek(seconds):
                 return self.run { try self.audioPlayer.seek(toSeconds: seconds) }
             case let .speedRate(rate):
-                return self.run { try self.audioPlayer.speedRate(rate.rawValue) }
+                return self.run {
+                    guard state.isPlaying else { return }
+                    try self.audioPlayer.speedRate(rate.rawValue)
+                }
             case .observeAudioStatus:
                 return self.observeAudioStatus()
             case .observeAudioTime:
