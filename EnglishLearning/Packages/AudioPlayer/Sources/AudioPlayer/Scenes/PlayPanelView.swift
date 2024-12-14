@@ -75,6 +75,10 @@ public struct PlayPanelView: View {
                 ),
                 in: 0...store.state.totalSeconds
             )
+            .background {
+                ProgressView(value: store.state.bufferRate, total: 1)
+                    .tint(.gray)
+            }
             
             HStack {
                 Text(store.state.currentTimeString)
@@ -85,6 +89,7 @@ public struct PlayPanelView: View {
         .disabled(!store.state.canPlay)
         .task { await self.store.send(.observeAudioStatus) }
         .task { await self.store.send(.observeAudioTime) }
+        .task { await self.store.send(.observeBufferRate) }
         .task { await self.store.send(.setupAudio(audioURL)) }
     }
     
@@ -102,7 +107,8 @@ public struct PlayPanelView: View {
                 totalSeconds: 0,
                 currentTime: "--:--",
                 totalTime: "--:--",
-                speedRate: .normal
+                speedRate: .normal,
+                bufferRate: 0
             ),
             reducer: ViewReducer().process,
             middlewares: [audioPlayerMiddleware.process]
@@ -119,6 +125,7 @@ extension PlayPanelView {
         let currentTimeString: String
         let totalTimeString: String
         let speedRate: SpeedRate
+        let bufferRate: Double
         let playerError: Error?
         
         init(
@@ -129,6 +136,7 @@ extension PlayPanelView {
             currentTime: String,
             totalTime: String,
             speedRate: SpeedRate,
+            bufferRate: Double,
             playerError: Error? = nil
         ) {
             self.canPlay = canPlay
@@ -138,6 +146,7 @@ extension PlayPanelView {
             self.currentTimeString = currentTime
             self.totalTimeString = totalTime
             self.speedRate = speedRate
+            self.bufferRate = bufferRate
             self.playerError = playerError
         }
     }
@@ -153,8 +162,10 @@ extension PlayPanelView {
         case controlError(Error)
         case observeAudioStatus
         case observeAudioTime
+        case observeBufferRate
         case updateAudioStatus(AudioPlayer.Status)
         case updateTime(currentSeconds: Double, totalSeconds: Double)
+        case updateBufferRate(Double)
     }
     
     struct ViewReducer {
@@ -177,7 +188,8 @@ extension PlayPanelView {
                     totalSeconds: state.totalSeconds,
                     currentTime: state.currentTimeString,
                     totalTime: state.totalTimeString,
-                    speedRate: state.speedRate
+                    speedRate: state.speedRate,
+                    bufferRate: state.bufferRate
                 )
             case .play:
                 return ViewState(
@@ -187,7 +199,8 @@ extension PlayPanelView {
                     totalSeconds: state.totalSeconds,
                     currentTime: state.currentTimeString,
                     totalTime: state.totalTimeString,
-                    speedRate: state.speedRate
+                    speedRate: state.speedRate,
+                    bufferRate: state.bufferRate
                 )
             case .pause:
                 return ViewState(
@@ -197,9 +210,10 @@ extension PlayPanelView {
                     totalSeconds: state.totalSeconds,
                     currentTime: state.currentTimeString,
                     totalTime: state.totalTimeString,
-                    speedRate: state.speedRate
+                    speedRate: state.speedRate,
+                    bufferRate: state.bufferRate
                 )
-            case .forward, .rewind, .seek, .observeAudioStatus, .observeAudioTime:
+            case .forward, .rewind, .seek, .observeAudioStatus, .observeAudioTime, .observeBufferRate:
                 return state
             case let .speedRate(rate):
                 return ViewState(
@@ -209,7 +223,8 @@ extension PlayPanelView {
                     totalSeconds: state.totalSeconds,
                     currentTime: state.currentTimeString,
                     totalTime: state.totalTimeString,
-                    speedRate: rate
+                    speedRate: rate,
+                    bufferRate: state.bufferRate
                 )
             case let .controlError(error):
                 return ViewState(
@@ -220,6 +235,7 @@ extension PlayPanelView {
                     currentTime: state.currentTimeString,
                     totalTime: state.totalTimeString,
                     speedRate: state.speedRate,
+                    bufferRate: state.bufferRate,
                     playerError: error
                 )
             case let .updateAudioStatus(status):
@@ -231,6 +247,7 @@ extension PlayPanelView {
                     currentTime: state.currentTimeString,
                     totalTime: state.totalTimeString,
                     speedRate: state.speedRate,
+                    bufferRate: state.bufferRate,
                     playerError: state.playerError
                 )
             case let .updateTime(currentSeconds, totalSeconds):
@@ -242,6 +259,19 @@ extension PlayPanelView {
                     currentTime: convertTime(currentSeconds),
                     totalTime: convertTime(totalSeconds),
                     speedRate: state.speedRate,
+                    bufferRate: state.bufferRate,
+                    playerError: state.playerError
+                )
+            case let .updateBufferRate(rate):
+                return ViewState(
+                    canPlay: state.canPlay,
+                    isPlaying: state.isPlaying,
+                    currentSeconds: state.currentSeconds,
+                    totalSeconds: state.totalSeconds,
+                    currentTime: state.currentTimeString,
+                    totalTime: state.totalTimeString,
+                    speedRate: state.speedRate,
+                    bufferRate: rate,
                     playerError: state.playerError
                 )
             }
@@ -285,7 +315,9 @@ extension PlayPanelView {
                 return self.observeAudioStatus()
             case .observeAudioTime:
                 return self.observeAudioTime()
-            case .controlError, .updateAudioStatus, .updateTime:
+            case .observeBufferRate:
+                return self.observeBufferRate()
+            case .controlError, .updateAudioStatus, .updateTime, .updateBufferRate:
                 return AsyncStream { $0.finish() }
             }
         }
@@ -320,6 +352,20 @@ extension PlayPanelView {
                         continuation.yield(
                             .updateTime(currentSeconds: seconds.current, totalSeconds: seconds.total)
                         )
+                    }
+                }
+            }
+        }
+        
+        private func observeBufferRate() -> AsyncStream<ViewAction> {
+            AsyncStream { continuation in
+                Task {
+                    guard let bufferRate = await audioPlayer.audioBufferRate else {
+                        continuation.finish()
+                        return
+                    }
+                    for await bufferRate in bufferRate {
+                        continuation.yield(.updateBufferRate(bufferRate))
                     }
                 }
             }
