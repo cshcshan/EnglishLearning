@@ -63,17 +63,3 @@ extension Episode: Equatable {
             && lhs.urlString == rhs.urlString
     }
 }
-
-extension Episode {
-    @MainActor
-    public static let dataSource: DataSource? = {
-        do {
-            return try DataSource(for: Episode.self, isStoredInMemoryOnly: false)
-        } catch {
-            // TODO: Add error message to Log later since it cause a compile error
-            // `Default argument cannot be both main actor-isolated and actor-isolated`
-//            Task { Log.data.add(error: error) }
-            return nil
-        }
-    }()
-}

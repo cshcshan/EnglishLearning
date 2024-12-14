@@ -10,17 +10,17 @@ import Foundation
 import SwiftData
 
 struct ServerEpisodesChecker {
-    private let episodesDataSource: DataSource<Episode>?
+    private let dataSource: DataSource
     
-    init(episodesDataSource: DataSource<Episode>?) {
-        self.episodesDataSource = episodesDataSource
+    init(dataSource: DataSource) {
+        self.dataSource = dataSource
     }
     
     func hasServerNewEpisodes(with now: Date) -> Bool {
         var fetchDescriptor = FetchDescriptor<Episode>(sortBy: [SortDescriptor(\.date, order: .reverse)])
         fetchDescriptor.fetchLimit = 1
         
-        guard let lastLocalEpisodeDate = try? episodesDataSource?.fetch(fetchDescriptor).last?.date,
+        guard let lastLocalEpisodeDate = try? dataSource.fetch(fetchDescriptor).last?.date,
               let lastThursday = now.lastWeekday(.thursday)
         else { return true }
 

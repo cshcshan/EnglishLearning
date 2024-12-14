@@ -7,38 +7,35 @@
 
 import SwiftData
 
-public protocol DataProvideable<Model> {
-    associatedtype Model: PersistentModel
-    
-    func fetch(_ descriptor: FetchDescriptor<Model>) throws -> [Model]
-    func add(_ models: [Model]) throws
-    func delete(_ models: [Model]) throws
+public protocol DataProvideable {
+    func fetch<Model: PersistentModel>(_ descriptor: FetchDescriptor<Model>) throws -> [Model]
+    func add<Model: PersistentModel>(_ models: [Model]) throws
+    func delete<Model: PersistentModel>(_ models: [Model]) throws
 }
 
-public struct DataSource<Model: PersistentModel>: DataProvideable {
+public struct DataSource: DataProvideable {
     // NOTE:
     // Although we don't access `modelContainer` in `DataSource` except `init()`, we still need to store
     // it globally, otherwise, it will be released after `init()`
-    private let modelContainer: ModelContainer
+    public let modelContainer: ModelContainer
     private let modelContext: ModelContext
     
     @MainActor
-    public init(for type: Model.Type, isStoredInMemoryOnly: Bool) throws {
-        let modelConfiguration = ModelConfiguration(isStoredInMemoryOnly: isStoredInMemoryOnly)
-        self.modelContainer = try ModelContainer(for: type.self, configurations: modelConfiguration)
+    public init(with modelContainer: ModelContainer) throws {
+        self.modelContainer = modelContainer
         self.modelContext = modelContainer.mainContext
     }
     
-    public func fetch(_ descriptor: FetchDescriptor<Model>) throws -> [Model] {
+    public func fetch<Model: PersistentModel>(_ descriptor: FetchDescriptor<Model>) throws -> [Model] {
         try modelContext.fetch(descriptor)
     }
     
-    public func add(_ models: [Model]) throws {
+    public func add<Model: PersistentModel>(_ models: [Model]) throws {
         models.forEach { modelContext.insert($0) }
         try modelContext.save()
     }
     
-    public func delete(_ models: [Model]) throws {
+    public func delete<Model: PersistentModel>(_ models: [Model]) throws {
         models.forEach { modelContext.delete($0) }
         try modelContext.save()
     }

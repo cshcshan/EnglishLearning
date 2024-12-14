@@ -31,17 +31,3 @@ extension EpisodeDetail {
 }
 
 extension EpisodeDetail: @unchecked Sendable {}
-
-extension EpisodeDetail {
-    @MainActor
-    static let dataSource: DataSource? = {
-        do {
-            return try DataSource(for: EpisodeDetail.self, isStoredInMemoryOnly: false)
-        } catch {
-            // TODO: Add error message to Log later since it cause a compile error
-            // `Default argument cannot be both main actor-isolated and actor-isolated`
-//            Task { Log.data.add(error: error) }
-            return nil
-        }
-    }()
-}

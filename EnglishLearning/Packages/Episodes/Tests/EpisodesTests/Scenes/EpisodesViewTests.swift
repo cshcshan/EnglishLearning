@@ -101,10 +101,10 @@ struct EpisodesViewTests {
         let hasServerNewEpisodes = arguments.hasServerNewEpisodes
 
         let mockHtmlConverter = MockHtmlConverter()
-        let mockDataSource = try DataSource<Episode>.mock(with: localEpisodes)
+        let mockDataSource = try DataSource.mock(with: localEpisodes)
         let fetchEpisodeMiddleware = EpisodesView.FetchEpisodeMiddleware(
             htmlConvertable: mockHtmlConverter,
-            episodeDataSource: mockDataSource,
+            dataProvideable: mockDataSource,
             hasServerNewEpisodes: hasServerNewEpisodes
         )
         
@@ -158,10 +158,10 @@ struct EpisodesViewTests {
         let isForceFetch = arguments.isForceFetch
 
         let mockHtmlConverter = MockHtmlConverter(loadEpisodesResult: .failure(.fetchServerDataError))
-        let mockDataSource = MockDataSource<Episode>(fetchResult: .failure(.fetchLocalDataError))
+        let mockDataSource = MockDataSource(fetchResult: .failure(.fetchLocalDataError))
         let fetchEpisodeMiddleware = EpisodesView.FetchEpisodeMiddleware(
             htmlConvertable: mockHtmlConverter,
-            episodeDataSource: mockDataSource,
+            dataProvideable: mockDataSource,
             hasServerNewEpisodes: false
         )
         
@@ -195,10 +195,10 @@ struct EpisodesViewTests {
     )
     func confirmErrorAlert(arguments: ConfirmErrorArguments) async throws {
         let mockHtmlConverter = MockHtmlConverter()
-        let mockDataSource = MockDataSource<Episode>()
+        let mockDataSource = MockDataSource()
         let fetchEpisodeMiddleware = EpisodesView.FetchEpisodeMiddleware(
             htmlConvertable: mockHtmlConverter,
-            episodeDataSource: mockDataSource,
+            dataProvideable: mockDataSource,
             hasServerNewEpisodes: false
         )
 
@@ -242,10 +242,10 @@ extension EpisodesViewTests {
     }
 }
 
-extension DataSource<Episode> {
+extension DataSource {
     @MainActor
-    fileprivate static func mock(with episodes: [Episode] = []) throws -> Self {
-        let mockDataSource = try DataSource(for: Episode.self, isStoredInMemoryOnly: true)
+    fileprivate static func mock(with episodes: [Episode] = []) throws -> DataSource {
+        let mockDataSource = try DataSource(with: .mock(isStoredInMemoryOnly: true))
         if !episodes.isEmpty {
             try mockDataSource.add(episodes)
         }

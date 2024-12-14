@@ -14,6 +14,7 @@ public struct EpisodesView: View {
 
     @State private(set) var store: EpisodesStore
     private let htmlConvertable: HtmlConvertable
+    private let dataSource: DataSource
     // We should store it as `EpisodesView`'s property, otherwise `FetchEpisodeMiddleware.process`'s
     // `[weak self]` will be **null**
     private let fetchEpisodeMiddleware: FetchEpisodeMiddleware
@@ -41,7 +42,7 @@ public struct EpisodesView: View {
             .navigationDestination(for: Episode.self) { episode in
                 EpisodeDetailView(
                     htmlConvertable: htmlConvertable,
-                    episodeDetailDataSource: EpisodeDetail.dataSource,
+                    dataSource: dataSource,
                     episode: episode
                 )
             }
@@ -61,14 +62,15 @@ public struct EpisodesView: View {
         }
     }
     
-    public init(htmlConvertable: HtmlConvertable, episodeDataSource: DataSource<Episode>?) {
+    public init(htmlConvertable: HtmlConvertable, dataSource: DataSource) {
         self.htmlConvertable = htmlConvertable
+        self.dataSource = dataSource
 
         let reducer = ViewReducer()
-        let serverNewEpisodesChecker = ServerEpisodesChecker(episodesDataSource: episodeDataSource)
+        let serverNewEpisodesChecker = ServerEpisodesChecker(dataSource: dataSource)
         self.fetchEpisodeMiddleware = FetchEpisodeMiddleware(
             htmlConvertable: htmlConvertable,
-            episodeDataSource: episodeDataSource,
+            dataProvideable: dataSource,
             hasServerNewEpisodes: serverNewEpisodesChecker.hasServerNewEpisodes(with: Date())
         )
         self.store = EpisodesStore(
@@ -131,8 +133,6 @@ extension EpisodesView {
     
     @MainActor
     final class FetchEpisodeMiddleware {
-        typealias EpisodeDataProvideable = any DataProvideable<Episode>
-        
         lazy var process: EpisodesStore.Middleware = { [weak self] state, action in
             switch action {
             case let .fetchData(isForce):
@@ -157,38 +157,32 @@ extension EpisodesView {
         )
 
         private let htmlConvertable: HtmlConvertable
-        private let episodeDataSource: EpisodeDataProvideable?
+        private let dataProvideable: any DataProvideable
         private let hasServerNewEpisodes: Bool
         
         init(
             htmlConvertable: HtmlConvertable,
-            episodeDataSource: EpisodeDataProvideable?,
+            dataProvideable: any DataProvideable,
             hasServerNewEpisodes: Bool
         ) {
             self.htmlConvertable = htmlConvertable
-            self.episodeDataSource = episodeDataSource
+            self.dataProvideable = dataProvideable
             self.hasServerNewEpisodes = hasServerNewEpisodes
         }
         
         private func fetchDataFromDB(withIsFetching isFetching: Bool) -> AsyncStream<ViewAction> {
-            do {
-                guard let episodeDataSource else {
-                    return fetchDataFromServer(withIsFetching: isFetching)
-                }
-                if hasServerNewEpisodes {
-                    return fetchDataFromServer(withIsFetching: isFetching)
-                } else {
-                    let episodes = try episodeDataSource.fetch(fetchEpisodesDescriptor)
-                    return AsyncStream {
-                        $0.yield(.fetchedData(.success(episodes)))
-                        $0.finish()
-                    }
-                }
-            } catch {
+            if hasServerNewEpisodes {
+                return fetchDataFromServer(withIsFetching: isFetching)
+            } else {
                 return AsyncStream { continuation in
                     Task {
-                        await Log.data.add(error: error)
-                        continuation.yield(.fetchedData(.failure(error)))
+                        do {
+                            let episodes = try dataProvideable.fetch(fetchEpisodesDescriptor)
+                            continuation.yield(.fetchedData(.success(episodes)))
+                        } catch {
+                            await Log.data.add(error: error)
+                            continuation.yield(.fetchedData(.failure(error)))
+                        }
                         continuation.finish()
                     }
                 }
@@ -206,10 +200,10 @@ extension EpisodesView {
 
                     do {
                         let htmlEpisodes = try await htmlConvertable.loadEpisodes()
-                        try episodeDataSource?.add(htmlEpisodes)
-                        let episodes = try episodeDataSource?.fetch(fetchEpisodesDescriptor)
+                        try dataProvideable.add(htmlEpisodes)
+                        let episodes = try dataProvideable.fetch(fetchEpisodesDescriptor)
                         
-                        continuation.yield(.fetchedData(.success(episodes ?? htmlEpisodes)))
+                        continuation.yield(.fetchedData(.success(episodes)))
                     } catch {
                         await Log.network.add(error: error)
                         continuation.yield(.fetchedData(.failure(error)))
@@ -228,8 +222,10 @@ extension EpisodesView {
 
 #Preview {
     let episodes = [Episode].dummy(withAmount: 10)
+
     let mockHtmlConverter = MockHtmlConverter()
     Task { await mockHtmlConverter.setLoadEpisodesResult(.success(episodes)) }
-    let episodeDataSource = try! DataSource(for: Episode.self, isStoredInMemoryOnly: true)
-    return EpisodesView(htmlConvertable: mockHtmlConverter, episodeDataSource: episodeDataSource)
+    let dataSource = try! DataSource(with: .mock(isStoredInMemoryOnly: true))
+
+    return EpisodesView(htmlConvertable: mockHtmlConverter, dataSource: dataSource)
 }

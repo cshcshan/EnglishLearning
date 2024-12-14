@@ -59,13 +59,13 @@ struct EpisodeDetailView: View {
     
     init(
         htmlConvertable: HtmlConvertable,
-        episodeDetailDataSource: DataSource<EpisodeDetail>?,
+        dataSource: DataSource,
         episode: Episode
     ) {
         let reducer = ViewReducer()
         self.fetchDetailMiddleware = FetchDetailMiddleware(
             htmlConvertable: htmlConvertable,
-            episodeDetailDataSource: episodeDetailDataSource,
+            dataSource: dataSource,
             episodeID: episode.id,
             episodePath: episode.urlString
         )
@@ -177,39 +177,33 @@ extension EpisodeDetailView {
         }
         
         private let htmlConvertable: HtmlConvertable
-        private let episodeDetailDataSource: DataSource<EpisodeDetail>?
+        private let dataSource: DataSource
         private let episodeID: String?
         private let episodePath: String?
         
         init(
             htmlConvertable: HtmlConvertable,
-            episodeDetailDataSource: DataSource<EpisodeDetail>?,
+            dataSource: DataSource,
             episodeID: String?,
             episodePath: String?
         ) {
             self.htmlConvertable = htmlConvertable
-            self.episodeDetailDataSource = episodeDetailDataSource
+            self.dataSource = dataSource
             self.episodeID = episodeID
             self.episodePath = episodePath
         }
         
         private func fetchData(withEpisodeID episodeID: String) -> AsyncStream<ViewAction> {
-            guard let episodeDetailDataSource else {
-                return fetchDataFromServer()
-            }
-
             let predicate = #Predicate<EpisodeDetail> { $0.id == episodeID }
             let fetchDescriptor = FetchDescriptor(predicate: predicate)
 
             do {
-                let episodeDetail = try episodeDetailDataSource.fetch(fetchDescriptor).first
-                if let episodeDetail {
-                    return AsyncStream {
-                        $0.yield(.fetchedData(.success(episodeDetail)))
-                        $0.finish()
-                    }
-                } else {
+                guard let episodeDetail = try dataSource.fetch(fetchDescriptor).first else {
                     return fetchDataFromServer()
+                }
+                return AsyncStream {
+                    $0.yield(.fetchedData(.success(episodeDetail)))
+                    $0.finish()
                 }
             } catch {
                 return AsyncStream { continuation in
@@ -229,9 +223,9 @@ extension EpisodeDetailView {
                         let episodeDetail = try await htmlConvertable.loadEpisodeDetail(
                             withID: episodeID, path: episodePath
                         )
-
+                        
                         if let episodeDetail {
-                            try episodeDetailDataSource?.add([episodeDetail])
+                            try dataSource.add([episodeDetail])
                             continuation.yield(.fetchedData(.success(episodeDetail)))
                         } else {
                             let episodeDetail = EpisodeDetail(id: episodeID)
@@ -270,11 +264,11 @@ extension EpisodeDetailView {
 
     let mockHtmlConverter = MockHtmlConverter()
     Task { await mockHtmlConverter.setLoadEpisodeDetailResult(.success(episodeDetail)) }
-    let episodeDetailDataSource = try! DataSource(for: EpisodeDetail.self, isStoredInMemoryOnly: true)
+    let dataSource = try! DataSource(with: .mock(isStoredInMemoryOnly: true))
 
     return EpisodeDetailView(
         htmlConvertable: mockHtmlConverter,
-        episodeDetailDataSource: episodeDetailDataSource,
+        dataSource: dataSource,
         episode: episode
     )
 }

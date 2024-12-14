@@ -31,14 +31,11 @@ struct EpisodeDetailViewTests {
             scriptHtml: "<p>Hello Swift</p>"
         )
         let mockHtmlConverter = MockHtmlConverter(loadEpisodeDetailResult: .success(episodeDetail))
-        let mockDataSource = try DataSource<EpisodeDetail>(
-            for: EpisodeDetail.self,
-            isStoredInMemoryOnly: true
-        )
+        let mockDataSource = try DataSource(with: .mock(isStoredInMemoryOnly: true))
 
         let sut = EpisodeDetailView(
             htmlConvertable: mockHtmlConverter,
-            episodeDetailDataSource: mockDataSource,
+            dataSource: mockDataSource,
             episode: episode
         )
         #expect(sut.store.state.title == "Can you trust ancestry DNA kits?")
@@ -60,17 +57,14 @@ struct EpisodeDetailViewTests {
             scriptHtml: "Hello Swift"
         )
         let mockHtmlConverter = MockHtmlConverter(loadEpisodeDetailResult: .success(episodeDetail))
-        let mockDataSource = try DataSource<EpisodeDetail>(
-            for: EpisodeDetail.self,
-            isStoredInMemoryOnly: true
-        )
+        let mockDataSource = try DataSource(with: .mock(isStoredInMemoryOnly: true))
         if hasLocalDetail {
             try mockDataSource.add([episodeDetail])
         }
 
         let fetchDetailMiddleware = EpisodeDetailView.FetchDetailMiddleware(
             htmlConvertable: mockHtmlConverter,
-            episodeDetailDataSource: mockDataSource,
+            dataSource: mockDataSource,
             episodeID: "Episode 241205",
             episodePath: "/learningenglish/english/features/6-minute-english_2024/ep-241205"
         )
@@ -101,14 +95,11 @@ struct EpisodeDetailViewTests {
         let imageURL = URL(string: "https://ichef.bbci.co.uk/images/ic/1920xn/p0k67wpv.jpg")
 
         let mockHtmlConverter = MockHtmlConverter()
-        let mockDataSource = try DataSource<EpisodeDetail>(
-            for: EpisodeDetail.self,
-            isStoredInMemoryOnly: true
-        )
+        let mockDataSource = try DataSource(with: .mock(isStoredInMemoryOnly: true))
 
         let fetchDetailMiddleware = EpisodeDetailView.FetchDetailMiddleware(
             htmlConvertable: mockHtmlConverter,
-            episodeDetailDataSource: mockDataSource,
+            dataSource: mockDataSource,
             episodeID: "Episode 241205",
             episodePath: "/learningenglish/english/features/6-minute-english_2024/ep-241205"
         )
