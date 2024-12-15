@@ -26,7 +26,7 @@ public struct PlayPanelView: View {
         }
     }
     
-    @State private var store: ViewStore
+    @State private(set) var store: ViewStore
     @Binding private var audioURL: URL?
     private let audioPlayerMiddleware: AudioPlayerMiddleware
     private let forwardRewindSeconds: Int = 10

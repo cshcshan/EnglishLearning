@@ -107,6 +107,8 @@ public final class AudioPlayer: NSObject, AudioPlayable {
     }
 
     public override init() {
+        super.init()
+        
         do {
             try AVAudioSession.sharedInstance().setCategory(
                 .playback, options: [.allowBluetooth, .allowAirPlay]
@@ -114,6 +116,11 @@ public final class AudioPlayer: NSObject, AudioPlayable {
         } catch {
             Task { await Log.audio.add(error: error) }
         }
+        
+        // To instance Continuations by call its lazy `AsyncStream`
+        _ = self.audioSeconds
+        _ = self.audioStatus
+        _ = self.audioBufferRate
     }
     
     public func setupAudio(url: URL?) throws {
