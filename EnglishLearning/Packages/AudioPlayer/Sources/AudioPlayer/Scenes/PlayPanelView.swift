@@ -115,10 +115,11 @@ public struct PlayPanelView: View {
                 isPlaying: false,
                 currentSeconds: 0,
                 totalSeconds: 0,
-                currentTime: "--:--",
-                totalTime: "--:--",
+                currentTimeString: "--:--",
+                totalTimeString: "--:--",
                 speedRate: .normal,
-                bufferRate: 0
+                bufferRate: 0,
+                playerError: nil
             ),
             reducer: ViewReducer().process,
             middlewares: [audioPlayerMiddleware.process]
@@ -151,26 +152,53 @@ extension PlayPanelView {
         let bufferRate: Double
         let playerError: Error?
         
-        init(
-            canPlay: Bool,
-            isPlaying: Bool,
-            currentSeconds: Double,
-            totalSeconds: Double,
-            currentTime: String,
-            totalTime: String,
-            speedRate: SpeedRate,
-            bufferRate: Double,
-            playerError: Error? = nil
-        ) {
-            self.canPlay = canPlay
-            self.isPlaying = isPlaying
-            self.currentSeconds = currentSeconds
-            self.totalSeconds = totalSeconds
-            self.currentTimeString = currentTime
-            self.totalTimeString = totalTime
-            self.speedRate = speedRate
-            self.bufferRate = bufferRate
-            self.playerError = playerError
+        static func update(
+            with state: ViewState,
+            canPlay: Bool? = nil,
+            isPlaying: Bool? = nil,
+            currentSeconds: Double? = nil,
+            totalSeconds: Double? = nil,
+            currentTimeString: String? = nil,
+            totalTimeString: String? = nil,
+            speedRate: SpeedRate? = nil,
+            bufferRate: Double? = nil
+        ) -> ViewState {
+            ViewState(
+                canPlay: canPlay ?? state.canPlay,
+                isPlaying: isPlaying ?? state.isPlaying,
+                currentSeconds: currentSeconds ?? state.currentSeconds,
+                totalSeconds: totalSeconds ?? state.totalSeconds,
+                currentTimeString: currentTimeString ?? state.currentTimeString,
+                totalTimeString: totalTimeString ?? state.totalTimeString,
+                speedRate: speedRate ?? state.speedRate,
+                bufferRate: bufferRate ?? state.bufferRate,
+                playerError: state.playerError
+            )
+        }
+        
+        static func update(
+            with state: ViewState,
+            canPlay: Bool? = nil,
+            isPlaying: Bool? = nil,
+            currentSeconds: Double? = nil,
+            totalSeconds: Double? = nil,
+            currentTimeString: String? = nil,
+            totalTimeString: String? = nil,
+            speedRate: SpeedRate? = nil,
+            bufferRate: Double? = nil,
+            playerError: Error?
+        ) -> ViewState {
+            ViewState(
+                canPlay: canPlay ?? state.canPlay,
+                isPlaying: isPlaying ?? state.isPlaying,
+                currentSeconds: currentSeconds ?? state.currentSeconds,
+                totalSeconds: totalSeconds ?? state.totalSeconds,
+                currentTimeString: currentTimeString ?? state.currentTimeString,
+                totalTimeString: totalTimeString ?? state.totalTimeString,
+                speedRate: speedRate ?? state.speedRate,
+                bufferRate: bufferRate ?? state.bufferRate,
+                playerError: playerError
+            )
         }
     }
     
@@ -192,7 +220,9 @@ extension PlayPanelView {
     }
     
     struct ViewReducer {
-        let process: ViewStore.Reducer = { state, action in
+        let process: ViewStore.Reducer = {
+            state,
+            action in
             let convertTime: (Double) -> String = { seconds in
                 guard !(seconds.isNaN || seconds.isInfinite) else { return "" }
                 let minute = Int(seconds / 60)
@@ -204,99 +234,30 @@ extension PlayPanelView {
             
             switch action {
             case .setupAudio:
-                return ViewState(
-                    canPlay: false,
-                    isPlaying: false,
-                    currentSeconds: state.currentSeconds,
-                    totalSeconds: state.totalSeconds,
-                    currentTime: state.currentTimeString,
-                    totalTime: state.totalTimeString,
-                    speedRate: state.speedRate,
-                    bufferRate: state.bufferRate
-                )
+                return ViewState.update(with: state, canPlay: false)
             case .play:
-                return ViewState(
-                    canPlay: state.canPlay,
-                    isPlaying: true,
-                    currentSeconds: state.currentSeconds,
-                    totalSeconds: state.totalSeconds,
-                    currentTime: state.currentTimeString,
-                    totalTime: state.totalTimeString,
-                    speedRate: state.speedRate,
-                    bufferRate: state.bufferRate
-                )
+                return ViewState.update(with: state, isPlaying: true)
             case .pause:
-                return ViewState(
-                    canPlay: state.canPlay,
-                    isPlaying: false,
-                    currentSeconds: state.currentSeconds,
-                    totalSeconds: state.totalSeconds,
-                    currentTime: state.currentTimeString,
-                    totalTime: state.totalTimeString,
-                    speedRate: state.speedRate,
-                    bufferRate: state.bufferRate
-                )
-            case .forward, .rewind, .seek, .observeAudioStatus, .observeAudioTime, .observeBufferRate:
-                return state
+                return ViewState.update(with: state, isPlaying: false)
             case let .speedRate(rate):
-                return ViewState(
-                    canPlay: state.canPlay,
-                    isPlaying: state.isPlaying,
-                    currentSeconds: state.currentSeconds,
-                    totalSeconds: state.totalSeconds,
-                    currentTime: state.currentTimeString,
-                    totalTime: state.totalTimeString,
-                    speedRate: rate,
-                    bufferRate: state.bufferRate
-                )
+                return ViewState.update(with: state, speedRate: rate)
             case let .controlError(error):
-                return ViewState(
-                    canPlay: state.canPlay,
-                    isPlaying: state.isPlaying,
-                    currentSeconds: state.currentSeconds,
-                    totalSeconds: state.totalSeconds,
-                    currentTime: state.currentTimeString,
-                    totalTime: state.totalTimeString,
-                    speedRate: state.speedRate,
-                    bufferRate: state.bufferRate,
-                    playerError: error
-                )
+                return ViewState.update(with: state, playerError: error)
             case let .updateAudioStatus(status):
-                return ViewState(
-                    canPlay: status.canPlay,
-                    isPlaying: [.waitingToPlayAtSpecifiedRate, .playing].contains { $0 == status },
-                    currentSeconds: state.currentSeconds,
-                    totalSeconds: state.totalSeconds,
-                    currentTime: state.currentTimeString,
-                    totalTime: state.totalTimeString,
-                    speedRate: state.speedRate,
-                    bufferRate: state.bufferRate,
-                    playerError: state.playerError
-                )
+                let isPlaying = [.waitingToPlayAtSpecifiedRate, .playing].contains { $0 == status }
+                return ViewState.update(with: state, canPlay: status.canPlay, isPlaying: isPlaying)
             case let .updateTime(currentSeconds, totalSeconds):
-                return ViewState(
-                    canPlay: state.canPlay,
-                    isPlaying: state.isPlaying,
+                return ViewState.update(
+                    with: state,
                     currentSeconds: currentSeconds,
                     totalSeconds: totalSeconds,
-                    currentTime: convertTime(currentSeconds),
-                    totalTime: convertTime(totalSeconds),
-                    speedRate: state.speedRate,
-                    bufferRate: state.bufferRate,
-                    playerError: state.playerError
+                    currentTimeString: convertTime(currentSeconds),
+                    totalTimeString: convertTime(totalSeconds)
                 )
             case let .updateBufferRate(rate):
-                return ViewState(
-                    canPlay: state.canPlay,
-                    isPlaying: state.isPlaying,
-                    currentSeconds: state.currentSeconds,
-                    totalSeconds: state.totalSeconds,
-                    currentTime: state.currentTimeString,
-                    totalTime: state.totalTimeString,
-                    speedRate: state.speedRate,
-                    bufferRate: rate,
-                    playerError: state.playerError
-                )
+                return ViewState.update(with: state, bufferRate: rate)
+            case .forward, .rewind, .seek, .observeAudioStatus, .observeAudioTime, .observeBufferRate:
+                return state
             }
         }
     }
