@@ -105,10 +105,10 @@ public struct PlayPanelView: View {
         }
     }
     
-    public init(audioURL: Binding<URL?>, audioPlayer: AudioPlayer = .init()) {
+    public init(audioURL: Binding<URL?>, audioPlayable: AudioPlayable = AudioPlayer()) {
         self._audioURL = audioURL
         self.audioPlayerMiddleware = AudioPlayerMiddleware(
-            audioPlayer: audioPlayer,
+            audioPlayable: audioPlayable,
             forwardRewindSeconds: forwardRewindSeconds
         )
         self.store = ViewStore(
@@ -216,7 +216,7 @@ extension PlayPanelView {
         case observeAudioStatus
         case observeAudioTime
         case observeBufferRate
-        case updateAudioStatus(AudioPlayer.Status)
+        case updateAudioStatus(AudioStatus)
         case updateTime(currentSeconds: Double, totalSeconds: Double)
         case updateBufferRate(Double)
     }
@@ -266,7 +266,7 @@ extension PlayPanelView {
     
     @MainActor
     final class AudioPlayerMiddleware {
-        private let audioPlayer: AudioPlayer
+        private let audioPlayable: AudioPlayable
         private let forwardRewindSeconds: Int
 
         lazy var process: ViewStore.Middleware = { [weak self] state, action in
@@ -281,21 +281,25 @@ extension PlayPanelView {
 
             switch action {
             case let .setupAudio(url):
-                return self.run { try self.audioPlayer.setupAudio(url: url) }
+                return self.run { try self.audioPlayable.setupAudio(url: url) }
             case .play:
-                return self.run { try self.audioPlayer.play(withRate: state.speedRate.rawValue) }
+                return self.run { try self.audioPlayable.play(withRate: state.speedRate.rawValue) }
             case .pause:
-                return self.run { try self.audioPlayer.pause() }
+                return self.run { try self.audioPlayable.pause() }
             case .forward:
-                return self.run { try self.audioPlayer.forward(seconds: Double(self.forwardRewindSeconds)) }
+                return self.run {
+                    try self.audioPlayable.forward(seconds: Double(self.forwardRewindSeconds))
+                }
             case .rewind:
-                return self.run { try self.audioPlayer.rewind(seconds: Double(self.forwardRewindSeconds)) }
+                return self.run {
+                    try self.audioPlayable.rewind(seconds: Double(self.forwardRewindSeconds))
+                }
             case let .seek(seconds):
-                return self.run { try self.audioPlayer.seek(toSeconds: seconds) }
+                return self.run { try self.audioPlayable.seek(toSeconds: seconds) }
             case let .speedRate(rate):
                 return self.run {
                     guard state.isPlaying else { return }
-                    try self.audioPlayer.speedRate(rate.rawValue)
+                    try self.audioPlayable.speedRate(rate.rawValue)
                 }
             case .observeAudioStatus:
                 return self.observeAudioStatus()
@@ -308,19 +312,15 @@ extension PlayPanelView {
             }
         }
         
-        init(audioPlayer: AudioPlayer, forwardRewindSeconds: Int) {
-            self.audioPlayer = audioPlayer
+        init(audioPlayable: AudioPlayable, forwardRewindSeconds: Int) {
+            self.audioPlayable = audioPlayable
             self.forwardRewindSeconds = forwardRewindSeconds
         }
         
         private func observeAudioStatus() -> AsyncStream<ViewAction> {
             AsyncStream { continuation in
                 Task {
-                    guard let status = await audioPlayer.audioStatus else {
-                        continuation.finish()
-                        return
-                    }
-                    for await status in status {
+                    for await status in audioPlayable.audioStatus {
                         continuation.yield(.updateAudioStatus(status))
                     }
                 }
@@ -330,11 +330,7 @@ extension PlayPanelView {
         private func observeAudioTime() -> AsyncStream<ViewAction> {
             AsyncStream { continuation in
                 Task {
-                    guard let audioSeconds = await audioPlayer.audioSeconds else {
-                        continuation.finish()
-                        return
-                    }
-                    for await seconds in audioSeconds {
+                    for await seconds in audioPlayable.audioSeconds {
                         continuation.yield(
                             .updateTime(currentSeconds: seconds.current, totalSeconds: seconds.total)
                         )
@@ -346,11 +342,7 @@ extension PlayPanelView {
         private func observeBufferRate() -> AsyncStream<ViewAction> {
             AsyncStream { continuation in
                 Task {
-                    guard let bufferRate = await audioPlayer.audioBufferRate else {
-                        continuation.finish()
-                        return
-                    }
-                    for await bufferRate in bufferRate {
+                    for await bufferRate in audioPlayable.audioBufferRate {
                         continuation.yield(.updateBufferRate(bufferRate))
                     }
                 }
