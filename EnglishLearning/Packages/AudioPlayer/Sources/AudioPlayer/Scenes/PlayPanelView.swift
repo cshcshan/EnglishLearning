@@ -69,6 +69,7 @@ public struct PlayPanelView: View {
             
             HStack {
                 Text(store.state.currentTimeString)
+                    .frame(width: 80, alignment: .leading)
                 
                 Menu {
                     Picker(
@@ -87,10 +88,11 @@ public struct PlayPanelView: View {
                 } label: {
                     Text(store.state.speedRate.title ?? "")
                         .font(.title2)
+                        .frame(maxWidth: .infinity)
                 }
-                .frame(maxWidth: .infinity)
                 
                 Text(store.state.totalTimeString)
+                    .frame(width: 80, alignment: .trailing)
             }
         }
         .disabled(!store.state.canPlay)
