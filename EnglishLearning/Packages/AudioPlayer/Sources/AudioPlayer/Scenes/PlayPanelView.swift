@@ -323,6 +323,7 @@ extension PlayPanelView {
                     for await status in audioPlayable.audioStatus {
                         continuation.yield(.updateAudioStatus(status))
                     }
+                    continuation.finish()
                 }
             }
         }
@@ -335,6 +336,7 @@ extension PlayPanelView {
                             .updateTime(currentSeconds: seconds.current, totalSeconds: seconds.total)
                         )
                     }
+                    continuation.finish()
                 }
             }
         }
@@ -345,6 +347,7 @@ extension PlayPanelView {
                     for await bufferRate in audioPlayable.audioBufferRate {
                         continuation.yield(.updateBufferRate(bufferRate))
                     }
+                    continuation.finish()
                 }
             }
         }

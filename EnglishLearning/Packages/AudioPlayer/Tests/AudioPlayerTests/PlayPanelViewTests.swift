@@ -201,31 +201,135 @@ extension PlayPanelViewTests {
         let expectedSpeedRateCount = isDefaultPlaying ? 1 : 0
         #expect(mockAudioPlayer.speedRateCount == expectedSpeedRateCount)
     }
+}
+
+// MARK: - Observe
+// TODO: to see if there are better ways to complete this kind of tests
+extension PlayPanelViewTests {
+    struct ObserveAudioStatusArgument {
+        let canPlay: Bool
+        let isPlaying: Bool
+        let audioStatus: AudioStatus
+        let expectedCanPlay: Bool
+        let expectedIsPlaying: Bool
+    }
     
-    @Test func observeAudioStatus() async throws {
+    @Test(
+        arguments: [
+            ObserveAudioStatusArgument(
+                canPlay: false,
+                isPlaying: false,
+                audioStatus: .unknown,
+                expectedCanPlay: false,
+                expectedIsPlaying: false
+            ),
+            ObserveAudioStatusArgument(
+                canPlay: false,
+                isPlaying: false,
+                audioStatus: .readyToPlay,
+                expectedCanPlay: true,
+                expectedIsPlaying: false
+            ),
+            ObserveAudioStatusArgument(
+                canPlay: false,
+                isPlaying: false,
+                audioStatus: .waitingToPlayAtSpecifiedRate,
+                expectedCanPlay: true,
+                expectedIsPlaying: true
+            ),
+            ObserveAudioStatusArgument(
+                canPlay: false,
+                isPlaying: false,
+                audioStatus: .playing,
+                expectedCanPlay: true,
+                expectedIsPlaying: true
+            ),
+            ObserveAudioStatusArgument(
+                canPlay: false,
+                isPlaying: false,
+                audioStatus: .paused,
+                expectedCanPlay: true,
+                expectedIsPlaying: false
+            ),
+            ObserveAudioStatusArgument(
+                canPlay: false,
+                isPlaying: false,
+                audioStatus: .failed,
+                expectedCanPlay: false,
+                expectedIsPlaying: false
+            )
+        ]
+    )
+    func observeAudioStatus(argument: ObserveAudioStatusArgument) async throws {
         let mockAudioPlayer = MockAudioPlayer()
         let audioPlayerMiddleware = PlayPanelView.AudioPlayerMiddleware(
             audioPlayable: mockAudioPlayer,
             forwardRewindSeconds: 10
         )
 
-        let initialState = ViewState.default(canPlay: true)
+        let initialState = ViewState.default(canPlay: argument.canPlay, isPlaying: argument.isPlaying)
+        let sut = PlayPanelView.ViewStore(
+            initialState: initialState,
+            reducer: ViewReducer().process,
+            middlewares: [audioPlayerMiddleware.process]
+        )
+
+        mockAudioPlayer.audioStatusContinuation!.yield(argument.audioStatus)
+        mockAudioPlayer.audioStatusContinuation!.finish()
+        
+        await sut.send(.observeAudioStatus)
+        
+        #expect(sut.state.canPlay == argument.expectedCanPlay)
+        #expect(sut.state.isPlaying == argument.expectedIsPlaying)
+    }
+    
+    @Test func observeAudioTime() async throws {
+        let mockAudioPlayer = MockAudioPlayer()
+        let audioPlayerMiddleware = PlayPanelView.AudioPlayerMiddleware(
+            audioPlayable: mockAudioPlayer,
+            forwardRewindSeconds: 10
+        )
+
+        let initialState = ViewState.default()
         let sut = PlayPanelView.ViewStore(
             initialState: initialState,
             reducer: ViewReducer().process,
             middlewares: [audioPlayerMiddleware.process]
         )
         
-        var audioStatusCount = 0
-        for await audioStatus in mockAudioPlayer.audioStatus {
-            audioStatusCount += 1
-        }
+        mockAudioPlayer.audioSecondsContinuation!.yield(AudioSeconds(current: 100, total: 200))
+        mockAudioPlayer.audioSecondsContinuation!.yield(AudioSeconds(current: 200, total: 300))
+        mockAudioPlayer.audioSecondsContinuation!.finish()
         
-        await sut.send(.observeAudioStatus)
-        mockAudioPlayer.yieldAudioStatus(.failed)
+        await sut.send(.observeAudioTime)
         
-        #expect(audioStatusCount == 1)
-        #expect(!sut.state.canPlay)
+        #expect(sut.state.currentSeconds == 200)
+        #expect(sut.state.currentTimeString == "03:20")
+        #expect(sut.state.totalSeconds == 300)
+        #expect(sut.state.totalTimeString == "05:00")
+    }
+    
+    @Test(arguments: [0, 0.3, 0.7, 1])
+    func observeBufferRate(_ rate: Double) async throws {
+        let mockAudioPlayer = MockAudioPlayer()
+        let audioPlayerMiddleware = PlayPanelView.AudioPlayerMiddleware(
+            audioPlayable: mockAudioPlayer,
+            forwardRewindSeconds: 10
+        )
+
+        let initialState = ViewState.default()
+        let sut = PlayPanelView.ViewStore(
+            initialState: initialState,
+            reducer: ViewReducer().process,
+            middlewares: [audioPlayerMiddleware.process]
+        )
+        
+        mockAudioPlayer.audioBufferRateContinuation!.yield(rate)
+        mockAudioPlayer.audioBufferRateContinuation!.finish()
+        
+        await sut.send(.observeBufferRate)
+        
+        #expect(sut.state.bufferRate == rate)
     }
 }
 
