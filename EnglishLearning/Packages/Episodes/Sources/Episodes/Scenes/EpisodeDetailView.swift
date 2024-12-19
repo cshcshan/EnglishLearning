@@ -14,7 +14,6 @@ struct EpisodeDetailView: View {
     typealias EpisodeDetailStore = Store<ViewState, ViewAction>
     
     @State private(set) var store: EpisodeDetailStore
-    @State private var playPanelHeight: CGFloat = 0
 
     private let fetchDetailMiddleware: FetchDetailMiddleware
 
