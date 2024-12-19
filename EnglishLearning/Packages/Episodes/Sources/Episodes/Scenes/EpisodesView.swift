@@ -31,6 +31,9 @@ public struct EpisodesView: View {
                 .listRowSeparator(.hidden)
                 .listRowBackground(Color.clear)
             }
+            .refreshable {
+                await store.send(.fetchData(isForce: true))
+            }
             .task {
                 await store.send(.fetchData(isForce: false))
             }
@@ -48,12 +51,21 @@ public struct EpisodesView: View {
             .errorAlert(
                 isPresented: .constant(store.state.fetchDataError != nil),
                 error: store.state.fetchDataError,
-                actions: { error in
+                actions: { _ in
                     Button(
                         action: {
                             Task { await store.send(.confirmErrorAlert) }
                         },
                         label: { Text("OK") }
+                    )
+                    Button(
+                        action: {
+                            Task {
+                                await store.send(.confirmErrorAlert)
+                                await store.send(.fetchData(isForce: true))
+                            }
+                        },
+                        label: { Text("Retry") }
                     )
                 },
                 message: { error in Text(error.recoverySuggestion ?? "") }
