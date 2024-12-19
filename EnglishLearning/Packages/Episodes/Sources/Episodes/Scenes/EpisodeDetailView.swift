@@ -31,7 +31,7 @@ struct EpisodeDetailView: View {
                 }
             }
             
-            PlayPanelView(audioURL: Binding(get: { store.state.audioURL }, set: { _ in }))
+            PlayPanelView(audioURL: .constant(store.state.audioURL))
                 .padding(20)
                 .background {
                     Color.white

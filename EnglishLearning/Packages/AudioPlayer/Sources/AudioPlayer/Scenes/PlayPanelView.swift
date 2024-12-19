@@ -375,5 +375,5 @@ extension PlayPanelView {
     let audioURL = URL(
         string: "https://downloads.bbc.co.uk/learningenglish/features/6min/241114_6_minute_english_the_bond_between_sisters_download.mp3"
     )
-    PlayPanelView(audioURL: Binding(get: { audioURL }, set: { _ in }))
+    PlayPanelView(audioURL: .constant(audioURL))
 }

@@ -16,9 +16,7 @@ struct PlayPanelViewTests {
     typealias ViewReducer = PlayPanelView.ViewReducer
     
     @Test func initPlayPanelView() async throws {
-        let sut = PlayPanelView(
-            audioURL: Binding(get: { nil }, set: { _ in })
-        )
+        let sut = PlayPanelView(audioURL: .constant(nil))
         
         #expect(!sut.store.state.canPlay)
         #expect(!sut.store.state.isPlaying)
