@@ -147,3 +147,14 @@ extension EpisodesView {
         case selfIsNull
     }
 }
+
+extension EpisodesView.ViewState: CustomStringConvertible {
+    var description: String {
+        """
+        [EpisodesView.ViewState]
+        isFetchingData: \(isFetchingData)
+        episodes: \(episodes.map(\.description).joined(separator: "\n"))
+        fetchDataError: \(fetchDataError.map { $0.localizedDescription } ?? "nil")
+        """
+    }
+}
