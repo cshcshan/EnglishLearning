@@ -27,6 +27,10 @@ public final class Store<State: Sendable, Action: Sendable> {
         self.state = state
         self.reducer = reducer
         self.middlewares = middlewares
+        
+        #if DEBUG
+        self.startObservingState()
+        #endif
     }
 
     public func send(_ action: Action) async {
@@ -45,5 +49,21 @@ public final class Store<State: Sendable, Action: Sendable> {
                 await send(action)
             }
         }
+    }
+    
+    private func startObservingState() {
+        withObservationTracking {
+            _ = state
+        } onChange: {
+            Task { [weak self] in
+                guard let self else { return }
+                await Log.viewState.add(level: .debug, message: "\(self.state)")
+            }
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.startObservingState()
+            }
+        }
+
     }
 }

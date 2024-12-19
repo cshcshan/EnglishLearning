@@ -173,3 +173,16 @@ extension EpisodeDetailView {
         case episodeIDIsNull
     }
 }
+
+extension EpisodeDetailView.ViewState: CustomStringConvertible {
+    var description: String {
+        """
+        [EpisodeDetailView.ViewState]
+        title: \(title ?? "nil")
+        imageURL: \(imageURL?.absoluteString ?? "nil")
+        scriptAttributedString: \(String(describing: scriptAttributedString))
+        audioURL: \(audioURL?.absoluteString ?? "nil")
+        fetchDataError: \(fetchDataError.map { $0.localizedDescription } ?? "nil")
+        """
+    }
+}
