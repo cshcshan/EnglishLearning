@@ -15,17 +15,17 @@ public struct EpisodesView: View {
     @State private(set) var store: EpisodesStore
     private let htmlConvertable: HtmlConvertable
     private let dataSource: DataSource
-    // We should store it as `EpisodesView`'s property, otherwise `FetchEpisodeMiddleware.process`'s
-    // `[weak self]` will be **null**
+    // Store `fetchEpisodeMiddleware` as a property of `EpisodesView` to prevent `[weak self]` from
+    // being null in `FetchEpisodeMiddleware.process`
     private let fetchEpisodeMiddleware: FetchEpisodeMiddleware
     
     public var body: some View {
         NavigationStack {
             List(store.state.episodes) { episode in
                 ZStack {
-                    // Because `NavigationLink` adds `>` symbol for each item, so using put `EpisodeView`
-                    // overlay the `NavigationLink` instead put `EpisodeView` inside `NavigationLink`
-                    // directly
+                    // Since `NavigationLink` automatically adds a `>` symbol for each item,
+                    // use `EpisodeView` as an overlay on top of the `NavigationLink`
+                    // instead of placing `EpisodeView` directly inside the `NavigationLink`.
                     NavigationLink(value: episode) { EmptyView() }.opacity(0)
                     EpisodeView(episode: episode)
                 }
