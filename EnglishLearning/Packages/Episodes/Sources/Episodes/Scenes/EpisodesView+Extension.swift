@@ -14,11 +14,39 @@ extension EpisodesView {
         let isFetchingData: Bool
         let episodes: [Episode]
         let fetchDataError: Error?
+
+        static var `default`: ViewState {
+            ViewState(
+                isFetchingData: false,
+                episodes: [],
+                fetchDataError: nil
+            )
+        }
         
-        init(isFetchingData: Bool = false, episodes: [Episode] = [], fetchDataError: Error? = nil) {
-            self.isFetchingData = isFetchingData
-            self.episodes = episodes
-            self.fetchDataError = fetchDataError
+        static func build(
+            with state: ViewState,
+            isFetchingData: Bool? = nil,
+            episodes: [Episode]? = nil
+        ) -> ViewState {
+            build(
+                with: state,
+                isFetchingData: isFetchingData,
+                episodes: episodes,
+                fetchDataError: state.fetchDataError
+            )
+        }
+        
+        static func build(
+            with state: ViewState,
+            isFetchingData: Bool? = nil,
+            episodes: [Episode]? = nil,
+            fetchDataError: Error?
+        ) -> ViewState {
+            ViewState(
+                isFetchingData: isFetchingData ?? state.isFetchingData,
+                episodes: episodes ?? state.episodes,
+                fetchDataError: fetchDataError
+            )
         }
     }
     
@@ -35,9 +63,7 @@ extension EpisodesView {
             case let .fetchData(isForce):
                 return state
             case .setIsLoading:
-                return ViewState(
-                    isFetchingData: true, episodes: state.episodes, fetchDataError: state.fetchDataError
-                )
+                return .build(with: state, isFetchingData: true)
             case let .fetchedData(result):
                 switch result {
                 case let .success(episodes):
@@ -50,11 +76,7 @@ extension EpisodesView {
                     )
                 }
             case .confirmErrorAlert:
-                return ViewState(
-                    isFetchingData: state.isFetchingData,
-                    episodes: state.episodes,
-                    fetchDataError: nil
-                )
+                return .build(with: state, fetchDataError: nil)
             }
         }
     }

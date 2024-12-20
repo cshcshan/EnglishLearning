@@ -45,9 +45,9 @@ struct EpisodesViewTests {
                 isForceFetch: true,
                 hasServerNewEpisodes: true,
                 expectedStates: [
-                    ViewState(),
-                    ViewState(isFetchingData: true),
-                    ViewState(episodes: .serverEpisodes)
+                    .default,
+                    .build(with: .default, isFetchingData: true),
+                    .build(with: .default, episodes: .serverEpisodes)
                 ],
                 expectedLoadEpisodesCount: 1
             ),
@@ -56,9 +56,9 @@ struct EpisodesViewTests {
                 isForceFetch: false,
                 hasServerNewEpisodes: true,
                 expectedStates: [
-                    ViewState(),
-                    ViewState(isFetchingData: true),
-                    ViewState(episodes: .serverEpisodes)
+                    .default,
+                    .build(with: .default, isFetchingData: true),
+                    .build(with: .default, episodes: .serverEpisodes)
                 ],
                 expectedLoadEpisodesCount: 1
             ),
@@ -67,8 +67,8 @@ struct EpisodesViewTests {
                 isForceFetch: false,
                 hasServerNewEpisodes: false,
                 expectedStates: [
-                    ViewState(),
-                    ViewState(episodes: .localEpisodes)
+                    .default,
+                    .build(with: .default, episodes: .localEpisodes)
                 ],
                 expectedLoadEpisodesCount: 0
             ),
@@ -76,7 +76,7 @@ struct EpisodesViewTests {
                 isFetching: true,
                 isForceFetch: true,
                 hasServerNewEpisodes: true,
-                expectedStates: [ViewState(isFetchingData: true)],
+                expectedStates: [.build(with: .default, isFetchingData: true)],
                 expectedLoadEpisodesCount: 0
             ),
             // Others
@@ -85,9 +85,9 @@ struct EpisodesViewTests {
                 isForceFetch: true,
                 hasServerNewEpisodes: false,
                 expectedStates: [
-                    ViewState(),
-                    ViewState(isFetchingData: true),
-                    ViewState(episodes: .serverEpisodes)
+                    .default,
+                    .build(with: .default, isFetchingData: true),
+                    .build(with: .default, episodes: .serverEpisodes)
                 ],
                 expectedLoadEpisodesCount: 1
             )
@@ -109,7 +109,7 @@ struct EpisodesViewTests {
         )
         
         let sut = ViewStore(
-            initialState: ViewState(isFetchingData: isFetching),
+            initialState: .build(with: .default, isFetchingData: isFetching),
             reducer: ViewReducer().process,
             middlewares: [fetchEpisodeMiddleware.process]
         )
@@ -134,9 +134,9 @@ struct EpisodesViewTests {
                 isFetching: false,
                 isForceFetch: true,
                 expectedStates: [
-                    ViewState(),
-                    ViewState(isFetchingData: true),
-                    ViewState(fetchDataError: DummyError.fetchServerDataError)
+                    .default,
+                    .build(with: .default, isFetchingData: true),
+                    .build(with: .default, fetchDataError: DummyError.fetchServerDataError)
                 ],
                 expectedLoadLocalEpisodesCount: 0,
                 expectedLoadServerEpisodesCount: 1
@@ -145,8 +145,8 @@ struct EpisodesViewTests {
                 isFetching: false,
                 isForceFetch: false,
                 expectedStates: [
-                    ViewState(),
-                    ViewState(fetchDataError: DummyError.fetchLocalDataError)
+                    .default,
+                    .build(with: .default, fetchDataError: DummyError.fetchLocalDataError)
                 ],
                 expectedLoadLocalEpisodesCount: 1,
                 expectedLoadServerEpisodesCount: 0
@@ -166,7 +166,7 @@ struct EpisodesViewTests {
         )
         
         let sut = ViewStore(
-            initialState: ViewState(isFetchingData: isFetching),
+            initialState: .build(with: .default, isFetchingData: isFetching),
             reducer: ViewReducer().process,
             middlewares: [fetchEpisodeMiddleware.process]
         )

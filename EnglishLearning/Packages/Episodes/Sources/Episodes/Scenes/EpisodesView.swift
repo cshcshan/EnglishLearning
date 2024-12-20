@@ -85,7 +85,7 @@ public struct EpisodesView: View {
             hasServerNewEpisodes: serverNewEpisodesChecker.hasServerNewEpisodes(with: Date())
         )
         self.store = EpisodesStore(
-            initialState: ViewState(),
+            initialState: .default,
             reducer: reducer.process,
             middlewares: [fetchEpisodeMiddleware.process]
         )
