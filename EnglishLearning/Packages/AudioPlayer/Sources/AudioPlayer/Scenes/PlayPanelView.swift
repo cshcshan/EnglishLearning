@@ -9,7 +9,7 @@ import Core
 import SwiftUI
 
 public struct PlayPanelView: View {
-    typealias ViewStore = OldStore<ViewState, ViewAction>
+    typealias ViewStore = Store<ViewState, ViewAction>
     
     enum SpeedRate: Float, CaseIterable {
         case half = 0.5
@@ -28,7 +28,7 @@ public struct PlayPanelView: View {
     
     @State private(set) var store: ViewStore
     @Binding private var audioURL: URL?
-    private let audioPlayerMiddleware: AudioPlayerMiddleware
+    private let reducer: ViewReducer
     private let forwardRewindSeconds: Int = 10
     
     public var body: some View {
@@ -107,7 +107,7 @@ public struct PlayPanelView: View {
     
     public init(audioURL: Binding<URL?>, audioPlayable: AudioPlayable = AudioPlayer()) {
         self._audioURL = audioURL
-        self.audioPlayerMiddleware = AudioPlayerMiddleware(
+        self.reducer = ViewReducer(
             audioPlayable: audioPlayable,
             forwardRewindSeconds: forwardRewindSeconds
         )
@@ -123,8 +123,7 @@ public struct PlayPanelView: View {
                 bufferRate: 0,
                 playerError: nil
             ),
-            reducer: ViewReducer().process,
-            middlewares: [audioPlayerMiddleware.process]
+            reducer: reducer.process
         )
     }
     

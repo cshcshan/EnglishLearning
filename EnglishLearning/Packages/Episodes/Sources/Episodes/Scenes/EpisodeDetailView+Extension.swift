@@ -69,7 +69,9 @@ extension EpisodeDetailView {
                     defer { continuation.finish() }
                     
                     guard let self else {
-                        continuation.yield(.build(with: state, fetchDataError: ViewError.selfIsNull))
+                        continuation.yield(
+                            .state(.build(with: state, fetchDataError: ViewError.selfIsNull))
+                        )
                         return
                     }
                     
@@ -79,7 +81,7 @@ extension EpisodeDetailView {
                     case .fetchData:
                         guard let episodeID = self.episodeID else {
                             continuation.yield(
-                                .build(with: state, fetchDataError: ViewError.episodeIDIsNull)
+                                .state(.build(with: state, fetchDataError: ViewError.episodeIDIsNull))
                             )
                             return
                         }
@@ -106,7 +108,7 @@ extension EpisodeDetailView {
                         newState = .build(with: state, fetchDataError: nil)
                     }
                     
-                    continuation.yield(newState)
+                    continuation.yield(.state(newState))
                 }
             }
         }

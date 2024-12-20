@@ -63,7 +63,9 @@ extension EpisodesView {
                     defer { continuation.finish() }
                     
                     guard let self else {
-                        continuation.yield(.build(with: state, fetchDataError: ViewError.selfIsNull))
+                        continuation.yield(
+                            .state(.build(with: state, fetchDataError: ViewError.selfIsNull))
+                        )
                         return
                     }
                     
@@ -75,7 +77,7 @@ extension EpisodesView {
                     case let .fetchData(isForce):
                         do {
                             let serverFetching: () -> Void = {
-                                continuation.yield(.build(with: state, isFetchingData: true))
+                                continuation.yield(.state(.build(with: state, isFetchingData: true)))
                             }
                             
                             let episodes = isForce
@@ -96,7 +98,7 @@ extension EpisodesView {
                         newState = ViewState.build(with: state, fetchDataError: nil)
                     }
                     
-                    continuation.yield(newState)
+                    continuation.yield(.state(newState))
                 }
             }
         }

@@ -80,155 +80,144 @@ extension PlayPanelView {
         case speedRate(SpeedRate)
         case controlError(Error)
         case observeAudioStatus
-        case observeAudioTime
-        case observeBufferRate
         case updateAudioStatus(AudioStatus)
-        case updateTime(currentSeconds: Double, totalSeconds: Double)
+        case observeAudioTime
+        case updateAudioTime(AudioSeconds)
+        case observeBufferRate
         case updateBufferRate(Double)
     }
     
-    struct ViewReducer {
-        let process: ViewStore.Reducer = {
-            state,
-            action in
-            let convertTime: (Double) -> String = { seconds in
-                guard !(seconds.isNaN || seconds.isInfinite) else { return "" }
-                let minute = Int(seconds / 60)
-                let second = Int(seconds.truncatingRemainder(dividingBy: 60))
-                let minuteStr = String(format: "%02d", minute)
-                let secondStr = String(format: "%02d", second)
-                return "\(minuteStr):\(secondStr)"
-            }
-            
-            switch action {
-            case .setupAudio:
-                return .build(with: state, canPlay: false)
-            case .play:
-                return .build(with: state, isPlaying: true)
-            case .pause:
-                return .build(with: state, isPlaying: false)
-            case let .speedRate(rate):
-                return .build(with: state, speedRate: rate)
-            case let .controlError(error):
-                return .build(with: state, playerError: error)
-            case let .updateAudioStatus(status):
-                let isPlaying = [.waitingToPlayAtSpecifiedRate, .playing].contains { $0 == status }
-                return .build(with: state, canPlay: status.canPlay, isPlaying: isPlaying)
-            case let .updateTime(currentSeconds, totalSeconds):
-                return .build(
-                    with: state,
-                    currentSeconds: currentSeconds,
-                    totalSeconds: totalSeconds,
-                    currentTimeString: convertTime(currentSeconds),
-                    totalTimeString: convertTime(totalSeconds)
-                )
-            case let .updateBufferRate(rate):
-                return .build(with: state, bufferRate: rate)
-            case .forward, .rewind, .seek, .observeAudioStatus, .observeAudioTime, .observeBufferRate:
-                return state
+    @MainActor
+    final class ViewReducer {
+        lazy var process: ViewStore.Reducer = { [weak self] state, action in
+            AsyncStream { continuation in
+                Task {
+                    defer { continuation.finish() }
+                    
+                    guard let self else {
+                        continuation.yield(
+                            .state(.build(with: state, playerError: ViewError.selfIsNull))
+                        )
+                        return
+                    }
+                    
+                    switch action {
+                    case let .setupAudio(url):
+                        let newState = ViewState.build(with: state, canPlay: false)
+                        continuation.yield(.state(newState))
+                        
+                        do {
+                            try self.audioPlayable.setupAudio(url: url)
+                        } catch {
+                            let newState = ViewState.build(with: state, playerError: error)
+                            continuation.yield(.state(newState))
+                        }
+                    case .play:
+                        let newState = ViewState.build(with: state, isPlaying: true)
+                        continuation.yield(.state(newState))
+                        
+                        do {
+                            try self.audioPlayable.play(withRate: state.speedRate.rawValue)
+                        } catch {
+                            let newState = ViewState.build(with: state, playerError: error)
+                            continuation.yield(.state(newState))
+                        }
+                    case .pause:
+                        let newState = ViewState.build(with: state, isPlaying: false)
+                        continuation.yield(.state(newState))
+                        
+                        do {
+                            try self.audioPlayable.pause()
+                        } catch {
+                            let newState = ViewState.build(with: state, playerError: error)
+                            continuation.yield(.state(newState))
+                        }
+                    case .forward:
+                        do {
+                            try self.audioPlayable.forward(seconds: Double(self.forwardRewindSeconds))
+                        } catch {
+                            let newState = ViewState.build(with: state, playerError: error)
+                            continuation.yield(.state(newState))
+                        }
+                    case .rewind:
+                        do {
+                            try self.audioPlayable.rewind(seconds: Double(self.forwardRewindSeconds))
+                        } catch {
+                            let newState = ViewState.build(with: state, playerError: error)
+                            continuation.yield(.state(newState))
+                        }
+                    case let .seek(seconds):
+                        do {
+                            try self.audioPlayable.seek(toSeconds: seconds)
+                        } catch {
+                            let newState = ViewState.build(with: state, playerError: error)
+                            continuation.yield(.state(newState))
+                        }
+                    case let .speedRate(rate):
+                        let newState = ViewState.build(with: state, speedRate: rate)
+                        continuation.yield(.state(newState))
+                        
+                        guard state.isPlaying else { return }
+                        do {
+                            try self.audioPlayable.speedRate(rate.rawValue)
+                        } catch {
+                            let newState = ViewState.build(with: state, playerError: error)
+                            continuation.yield(.state(newState))
+                        }
+                    case let .controlError(error):
+                        let newState = ViewState.build(with: state, playerError: error)
+                        continuation.yield(.state(newState))
+                    case .observeAudioStatus:
+                        for await status in self.audioPlayable.audioStatus {
+                            continuation.yield(.action(.updateAudioStatus(status)))
+                        }
+                    case let .updateAudioStatus(status):
+                        let isPlaying = [.waitingToPlayAtSpecifiedRate, .playing].contains {
+                            $0 == status
+                        }
+                        let newState = ViewState.build(
+                            with: state, canPlay: status.canPlay, isPlaying: isPlaying
+                        )
+                        continuation.yield(.state(newState))
+                    case .observeAudioTime:
+                        for await seconds in self.audioPlayable.audioSeconds {
+                            continuation.yield(.action(.updateAudioTime(seconds)))
+                        }
+                    case let .updateAudioTime(seconds):
+                        let newState = ViewState.build(
+                            with: state,
+                            currentSeconds: seconds.current,
+                            totalSeconds: seconds.total,
+                            currentTimeString: self.convertTime(seconds: seconds.current),
+                            totalTimeString: self.convertTime(seconds: seconds.total)
+                        )
+                        continuation.yield(.state(newState))
+                    case .observeBufferRate:
+                        for await rate in self.audioPlayable.audioBufferRate {
+                            continuation.yield(.action(.updateBufferRate(rate)))
+                        }
+                    case let .updateBufferRate(rate):
+                        let newState = ViewState.build(with: state, bufferRate: rate)
+                        continuation.yield(.state(newState))
+                    }
+                }
             }
         }
-    }
-    
-    @MainActor
-    final class AudioPlayerMiddleware {
+        
         private let audioPlayable: AudioPlayable
         private let forwardRewindSeconds: Int
-
-        lazy var process: ViewStore.Middleware = { [weak self] state, action in
-            var selfNullAsyncStream: AsyncStream<ViewAction> {
-                AsyncStream {
-                    $0.yield(.controlError(ViewError.selfIsNull))
-                    $0.finish()
-                }
-            }
-
-            guard let self else { return selfNullAsyncStream }
-
-            switch action {
-            case let .setupAudio(url):
-                return self.run { try self.audioPlayable.setupAudio(url: url) }
-            case .play:
-                return self.run { try self.audioPlayable.play(withRate: state.speedRate.rawValue) }
-            case .pause:
-                return self.run { try self.audioPlayable.pause() }
-            case .forward:
-                return self.run {
-                    try self.audioPlayable.forward(seconds: Double(self.forwardRewindSeconds))
-                }
-            case .rewind:
-                return self.run {
-                    try self.audioPlayable.rewind(seconds: Double(self.forwardRewindSeconds))
-                }
-            case let .seek(seconds):
-                return self.run { try self.audioPlayable.seek(toSeconds: seconds) }
-            case let .speedRate(rate):
-                return self.run {
-                    guard state.isPlaying else { return }
-                    try self.audioPlayable.speedRate(rate.rawValue)
-                }
-            case .observeAudioStatus:
-                return self.observeAudioStatus()
-            case .observeAudioTime:
-                return self.observeAudioTime()
-            case .observeBufferRate:
-                return self.observeBufferRate()
-            case .controlError, .updateAudioStatus, .updateTime, .updateBufferRate:
-                return AsyncStream { $0.finish() }
-            }
-        }
         
         init(audioPlayable: AudioPlayable, forwardRewindSeconds: Int) {
             self.audioPlayable = audioPlayable
             self.forwardRewindSeconds = forwardRewindSeconds
         }
         
-        private func observeAudioStatus() -> AsyncStream<ViewAction> {
-            AsyncStream { continuation in
-                Task {
-                    for await status in audioPlayable.audioStatus {
-                        continuation.yield(.updateAudioStatus(status))
-                    }
-                    continuation.finish()
-                }
-            }
-        }
-        
-        private func observeAudioTime() -> AsyncStream<ViewAction> {
-            AsyncStream { continuation in
-                Task {
-                    for await seconds in audioPlayable.audioSeconds {
-                        continuation.yield(
-                            .updateTime(currentSeconds: seconds.current, totalSeconds: seconds.total)
-                        )
-                    }
-                    continuation.finish()
-                }
-            }
-        }
-        
-        private func observeBufferRate() -> AsyncStream<ViewAction> {
-            AsyncStream { continuation in
-                Task {
-                    for await bufferRate in audioPlayable.audioBufferRate {
-                        continuation.yield(.updateBufferRate(bufferRate))
-                    }
-                    continuation.finish()
-                }
-            }
-        }
-        
-        private func run(_ action: @escaping () async throws -> Void) -> AsyncStream<ViewAction> {
-            AsyncStream { continuation in
-                Task {
-                    do {
-                        try await action()
-                    } catch {
-                        continuation.yield(.controlError(error))
-                    }
-                    continuation.finish()
-                }
-            }
+        private func convertTime(seconds: Double) -> String {
+            guard !(seconds.isNaN || seconds.isInfinite) else { return "" }
+            
+            let minute = Int(seconds / 60)
+            let second = Int(seconds.truncatingRemainder(dividingBy: 60))
+            return String(format: "%02d:%02d", minute, second)
         }
     }
     

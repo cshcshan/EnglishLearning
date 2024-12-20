@@ -33,7 +33,7 @@ struct PlayPanelViewTests {
 extension PlayPanelViewTests {
     @Test func setupAudio() async throws {
         let mockAudioPlayer = MockAudioPlayer()
-        let audioPlayerMiddleware = PlayPanelView.AudioPlayerMiddleware(
+        let reducer = PlayPanelView.ViewReducer(
             audioPlayable: mockAudioPlayer,
             forwardRewindSeconds: 10
         )
@@ -41,8 +41,7 @@ extension PlayPanelViewTests {
         let initialState = ViewState.default(canPlay: true)
         let sut = ViewStore(
             initialState: initialState,
-            reducer: ViewReducer().process,
-            middlewares: [audioPlayerMiddleware.process]
+            reducer: reducer.process
         )
         
         #expect(sut.state.canPlay)
@@ -58,7 +57,7 @@ extension PlayPanelViewTests {
     @Test(arguments: [false, true])
     func play(isDefaultPlaying: Bool) async throws {
         let mockAudioPlayer = MockAudioPlayer()
-        let audioPlayerMiddleware = PlayPanelView.AudioPlayerMiddleware(
+        let reducer = PlayPanelView.ViewReducer(
             audioPlayable: mockAudioPlayer,
             forwardRewindSeconds: 10
         )
@@ -66,8 +65,7 @@ extension PlayPanelViewTests {
         let initialState = ViewState.default(isPlaying: isDefaultPlaying)
         let sut = ViewStore(
             initialState: initialState,
-            reducer: ViewReducer().process,
-            middlewares: [audioPlayerMiddleware.process]
+            reducer: reducer.process
         )
         
         #expect(sut.state.isPlaying == isDefaultPlaying)
@@ -82,7 +80,7 @@ extension PlayPanelViewTests {
     @Test(arguments: [false, true])
     func pause(isDefaultPlaying: Bool) async throws {
         let mockAudioPlayer = MockAudioPlayer()
-        let audioPlayerMiddleware = PlayPanelView.AudioPlayerMiddleware(
+        let reducer = PlayPanelView.ViewReducer(
             audioPlayable: mockAudioPlayer,
             forwardRewindSeconds: 10
         )
@@ -90,8 +88,7 @@ extension PlayPanelViewTests {
         let initialState = ViewState.default(isPlaying: isDefaultPlaying)
         let sut = ViewStore(
             initialState: initialState,
-            reducer: ViewReducer().process,
-            middlewares: [audioPlayerMiddleware.process]
+            reducer: reducer.process
         )
         
         #expect(sut.state.isPlaying == isDefaultPlaying)
@@ -106,7 +103,7 @@ extension PlayPanelViewTests {
     @Test(arguments: [false, true])
     func forward(isDefaultPlaying: Bool) async throws {
         let mockAudioPlayer = MockAudioPlayer()
-        let audioPlayerMiddleware = PlayPanelView.AudioPlayerMiddleware(
+        let reducer = PlayPanelView.ViewReducer(
             audioPlayable: mockAudioPlayer,
             forwardRewindSeconds: 10
         )
@@ -114,8 +111,7 @@ extension PlayPanelViewTests {
         let initialState = ViewState.default(isPlaying: isDefaultPlaying)
         let sut = PlayPanelView.ViewStore(
             initialState: initialState,
-            reducer: ViewReducer().process,
-            middlewares: [audioPlayerMiddleware.process]
+            reducer: reducer.process
         )
         
         #expect(sut.state.isPlaying == isDefaultPlaying)
@@ -130,7 +126,7 @@ extension PlayPanelViewTests {
     @Test(arguments: [false, true])
     func rewind(isDefaultPlaying: Bool) async throws {
         let mockAudioPlayer = MockAudioPlayer()
-        let audioPlayerMiddleware = PlayPanelView.AudioPlayerMiddleware(
+        let reducer = PlayPanelView.ViewReducer(
             audioPlayable: mockAudioPlayer,
             forwardRewindSeconds: 10
         )
@@ -138,8 +134,7 @@ extension PlayPanelViewTests {
         let initialState = ViewState.default(isPlaying: isDefaultPlaying)
         let sut = PlayPanelView.ViewStore(
             initialState: initialState,
-            reducer: ViewReducer().process,
-            middlewares: [audioPlayerMiddleware.process]
+            reducer: reducer.process
         )
         
         #expect(sut.state.isPlaying == isDefaultPlaying)
@@ -154,7 +149,7 @@ extension PlayPanelViewTests {
     @Test(arguments: [false, true])
     func seek(isDefaultPlaying: Bool) async throws {
         let mockAudioPlayer = MockAudioPlayer()
-        let audioPlayerMiddleware = PlayPanelView.AudioPlayerMiddleware(
+        let reducer = PlayPanelView.ViewReducer(
             audioPlayable: mockAudioPlayer,
             forwardRewindSeconds: 10
         )
@@ -162,8 +157,7 @@ extension PlayPanelViewTests {
         let initialState = ViewState.default(isPlaying: isDefaultPlaying)
         let sut = PlayPanelView.ViewStore(
             initialState: initialState,
-            reducer: ViewReducer().process,
-            middlewares: [audioPlayerMiddleware.process]
+            reducer: reducer.process
         )
         
         #expect(sut.state.isPlaying == isDefaultPlaying)
@@ -178,7 +172,7 @@ extension PlayPanelViewTests {
     @Test(arguments: [false, true])
     func speedRate(isDefaultPlaying: Bool) async throws {
         let mockAudioPlayer = MockAudioPlayer()
-        let audioPlayerMiddleware = PlayPanelView.AudioPlayerMiddleware(
+        let reducer = PlayPanelView.ViewReducer(
             audioPlayable: mockAudioPlayer,
             forwardRewindSeconds: 10
         )
@@ -186,8 +180,7 @@ extension PlayPanelViewTests {
         let initialState = ViewState.default(isPlaying: isDefaultPlaying)
         let sut = PlayPanelView.ViewStore(
             initialState: initialState,
-            reducer: ViewReducer().process,
-            middlewares: [audioPlayerMiddleware.process]
+            reducer: reducer.process
         )
         
         #expect(sut.state.isPlaying == isDefaultPlaying)
@@ -260,7 +253,7 @@ extension PlayPanelViewTests {
     )
     func observeAudioStatus(argument: ObserveAudioStatusArgument) async throws {
         let mockAudioPlayer = MockAudioPlayer()
-        let audioPlayerMiddleware = PlayPanelView.AudioPlayerMiddleware(
+        let reducer = PlayPanelView.ViewReducer(
             audioPlayable: mockAudioPlayer,
             forwardRewindSeconds: 10
         )
@@ -268,8 +261,7 @@ extension PlayPanelViewTests {
         let initialState = ViewState.default(canPlay: argument.canPlay, isPlaying: argument.isPlaying)
         let sut = PlayPanelView.ViewStore(
             initialState: initialState,
-            reducer: ViewReducer().process,
-            middlewares: [audioPlayerMiddleware.process]
+            reducer: reducer.process
         )
 
         mockAudioPlayer.audioStatusContinuation!.yield(argument.audioStatus)
@@ -283,7 +275,7 @@ extension PlayPanelViewTests {
     
     @Test func observeAudioTime() async throws {
         let mockAudioPlayer = MockAudioPlayer()
-        let audioPlayerMiddleware = PlayPanelView.AudioPlayerMiddleware(
+        let reducer = PlayPanelView.ViewReducer(
             audioPlayable: mockAudioPlayer,
             forwardRewindSeconds: 10
         )
@@ -291,8 +283,7 @@ extension PlayPanelViewTests {
         let initialState = ViewState.default()
         let sut = PlayPanelView.ViewStore(
             initialState: initialState,
-            reducer: ViewReducer().process,
-            middlewares: [audioPlayerMiddleware.process]
+            reducer: reducer.process
         )
         
         mockAudioPlayer.audioSecondsContinuation!.yield(AudioSeconds(current: 100, total: 200))
@@ -310,7 +301,7 @@ extension PlayPanelViewTests {
     @Test(arguments: [0, 0.3, 0.7, 1])
     func observeBufferRate(_ rate: Double) async throws {
         let mockAudioPlayer = MockAudioPlayer()
-        let audioPlayerMiddleware = PlayPanelView.AudioPlayerMiddleware(
+        let reducer = PlayPanelView.ViewReducer(
             audioPlayable: mockAudioPlayer,
             forwardRewindSeconds: 10
         )
@@ -318,8 +309,7 @@ extension PlayPanelViewTests {
         let initialState = ViewState.default()
         let sut = PlayPanelView.ViewStore(
             initialState: initialState,
-            reducer: ViewReducer().process,
-            middlewares: [audioPlayerMiddleware.process]
+            reducer: reducer.process
         )
         
         mockAudioPlayer.audioBufferRateContinuation!.yield(rate)

@@ -12,7 +12,12 @@ import Observation
 @MainActor
 @Observable
 public final class Store<State: Sendable, Action: Sendable> {
-    public typealias Reducer = @MainActor (State, Action) -> AsyncStream<State>
+    public typealias Reducer = @MainActor (State, Action) -> AsyncStream<ReduceResult>
+    
+    public enum ReduceResult: Sendable {
+        case state(State)
+        case action(Action)
+    }
 
     public private(set) var state: State
     private let reducer: Reducer
@@ -30,8 +35,13 @@ public final class Store<State: Sendable, Action: Sendable> {
     }
 
     public func send(_ action: Action) async {
-        for await state in reducer(state, action) {
-            self.state = state
+        for await result in reducer(state, action) {
+            switch result {
+            case let .state(state):
+                self.state = state
+            case let .action(action):
+                await self.send(action)
+            }
         }
     }
     
