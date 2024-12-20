@@ -19,7 +19,7 @@ extension PlayPanelView {
         let bufferRate: Double
         let playerError: Error?
         
-        static func update(
+        static func build(
             with state: ViewState,
             canPlay: Bool? = nil,
             isPlaying: Bool? = nil,
@@ -30,20 +30,21 @@ extension PlayPanelView {
             speedRate: SpeedRate? = nil,
             bufferRate: Double? = nil
         ) -> ViewState {
-            ViewState(
-                canPlay: canPlay ?? state.canPlay,
-                isPlaying: isPlaying ?? state.isPlaying,
-                currentSeconds: currentSeconds ?? state.currentSeconds,
-                totalSeconds: totalSeconds ?? state.totalSeconds,
-                currentTimeString: currentTimeString ?? state.currentTimeString,
-                totalTimeString: totalTimeString ?? state.totalTimeString,
-                speedRate: speedRate ?? state.speedRate,
-                bufferRate: bufferRate ?? state.bufferRate,
+            build(
+                with: state,
+                canPlay: canPlay,
+                isPlaying: isPlaying,
+                currentSeconds: currentSeconds,
+                totalSeconds: totalSeconds,
+                currentTimeString: currentTimeString,
+                totalTimeString: totalTimeString,
+                speedRate: speedRate,
+                bufferRate: bufferRate,
                 playerError: state.playerError
             )
         }
         
-        static func update(
+        static func build(
             with state: ViewState,
             canPlay: Bool? = nil,
             isPlaying: Bool? = nil,
@@ -101,20 +102,20 @@ extension PlayPanelView {
             
             switch action {
             case .setupAudio:
-                return ViewState.update(with: state, canPlay: false)
+                return .build(with: state, canPlay: false)
             case .play:
-                return ViewState.update(with: state, isPlaying: true)
+                return .build(with: state, isPlaying: true)
             case .pause:
-                return ViewState.update(with: state, isPlaying: false)
+                return .build(with: state, isPlaying: false)
             case let .speedRate(rate):
-                return ViewState.update(with: state, speedRate: rate)
+                return .build(with: state, speedRate: rate)
             case let .controlError(error):
-                return ViewState.update(with: state, playerError: error)
+                return .build(with: state, playerError: error)
             case let .updateAudioStatus(status):
                 let isPlaying = [.waitingToPlayAtSpecifiedRate, .playing].contains { $0 == status }
-                return ViewState.update(with: state, canPlay: status.canPlay, isPlaying: isPlaying)
+                return .build(with: state, canPlay: status.canPlay, isPlaying: isPlaying)
             case let .updateTime(currentSeconds, totalSeconds):
-                return ViewState.update(
+                return .build(
                     with: state,
                     currentSeconds: currentSeconds,
                     totalSeconds: totalSeconds,
@@ -122,7 +123,7 @@ extension PlayPanelView {
                     totalTimeString: convertTime(totalSeconds)
                 )
             case let .updateBufferRate(rate):
-                return ViewState.update(with: state, bufferRate: rate)
+                return .build(with: state, bufferRate: rate)
             case .forward, .rewind, .seek, .observeAudioStatus, .observeAudioTime, .observeBufferRate:
                 return state
             }
