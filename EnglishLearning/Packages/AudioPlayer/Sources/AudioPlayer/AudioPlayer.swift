@@ -73,33 +73,22 @@ public final class AudioPlayer: NSObject, AudioPlayable {
         case loadedTimeRanges
     }
 
-    private(set) lazy public var audioSeconds: AsyncStream<AudioSeconds> = {
-        AsyncStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
-            self.audioSecondsContinuation = continuation
-        }
-    }()
-    private var audioSecondsContinuation: AsyncStream<AudioSeconds>.Continuation?
+    public let audioSeconds: AsyncStream<AudioSeconds>
+    private let audioSecondsContinuation: AsyncStream<AudioSeconds>.Continuation
 
-    private(set) lazy public var audioStatus: AsyncStream<AudioStatus> = {
-        AsyncStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
-            self.audioStatusContinuation = continuation
-        }
-    }()
-    private var audioStatusContinuation: AsyncStream<AudioStatus>.Continuation?
+    public let audioStatus: AsyncStream<AudioStatus>
+    private let audioStatusContinuation: AsyncStream<AudioStatus>.Continuation
 
-    private(set) lazy public var audioBufferRate: AsyncStream<Double> = {
-        AsyncStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
-            self.audioBufferRateContinuation = continuation
-        }
-    }()
-    private var audioBufferRateContinuation: AsyncStream<Double>.Continuation?
+    public let audioBufferRate: AsyncStream<Double>
+    private let audioBufferRateContinuation: AsyncStream<Double>.Continuation
     
     private var player: AVPlayer?
     private var playerItem: AVPlayerItem?
     
     deinit {
-        audioSecondsContinuation?.finish()
-        audioStatusContinuation?.finish()
+        audioSecondsContinuation.finish()
+        audioStatusContinuation.finish()
+        audioBufferRateContinuation.finish()
         
         player?.removeObserver(self, forKeyPath: KeyPathName.timeControlStatus.rawValue)
         playerItem?.removeObserver(self, forKeyPath: KeyPathName.status.rawValue)
@@ -107,6 +96,18 @@ public final class AudioPlayer: NSObject, AudioPlayable {
     }
 
     public override init() {
+        let (audioSeconds, audioSecondsContinuation) = AsyncStream<AudioSeconds>.makeStream()
+        self.audioSeconds = audioSeconds
+        self.audioSecondsContinuation = audioSecondsContinuation
+        
+        let (audioStatus, audioStatusContinuation) = AsyncStream<AudioStatus>.makeStream()
+        self.audioStatus = audioStatus
+        self.audioStatusContinuation = audioStatusContinuation
+        
+        let (audioBufferRate, audioBufferRateContinuation) = AsyncStream<Double>.makeStream()
+        self.audioBufferRate = audioBufferRate
+        self.audioBufferRateContinuation = audioBufferRateContinuation
+
         super.init()
         
         do {
@@ -116,11 +117,6 @@ public final class AudioPlayer: NSObject, AudioPlayable {
         } catch {
             Task { await Log.audio.add(error: error) }
         }
-        
-        // To instance Continuations by call its lazy `AsyncStream`
-        _ = self.audioSeconds
-        _ = self.audioStatus
-        _ = self.audioBufferRate
     }
     
     public func setupAudio(url: URL?) throws {
@@ -206,7 +202,7 @@ public final class AudioPlayer: NSObject, AudioPlayable {
                 current: CMTimeGetSeconds(time),
                 total: CMTimeGetSeconds(playerItem?.duration ?? .zero)
             )
-            audioSecondsContinuation?.yield(audioSeconds)
+            audioSecondsContinuation.yield(audioSeconds)
         }
         
         player?.addObserver(
@@ -245,12 +241,12 @@ public final class AudioPlayer: NSObject, AudioPlayable {
             guard let player else { return }
 
             let status = AudioStatus(audioStatus: player.status)
-            audioStatusContinuation?.yield(status)
+            audioStatusContinuation.yield(status)
         case .timeControlStatus:
             guard let player else { return }
 
             let status = AudioStatus(timeControlStatus: player.timeControlStatus)
-            audioStatusContinuation?.yield(status)
+            audioStatusContinuation.yield(status)
         case .loadedTimeRanges:
             guard let playerItem = playerItem,
                   let timeRangeValue = playerItem.loadedTimeRanges.first?.timeRangeValue
@@ -259,7 +255,7 @@ public final class AudioPlayer: NSObject, AudioPlayable {
             let bufferSeconds = CMTimeGetSeconds(timeRangeValue.start + timeRangeValue.duration)
             let duration = CMTimeGetSeconds(playerItem.duration)
             let rate = bufferSeconds / duration
-            audioBufferRateContinuation?.yield(rate)
+            audioBufferRateContinuation.yield(rate)
         }
     }
 }
