@@ -52,53 +52,52 @@ extension EpisodesView {
     
     enum ViewAction {
         case fetchData(isForce: Bool)
-        case setIsLoading
-        case fetchedData(Result<[Episode], Error>)
         case confirmErrorAlert
     }
     
-    struct ViewReducer {
-        let process: EpisodesStore.Reducer = { state, action in
-            switch action {
-            case let .fetchData(isForce):
-                return state
-            case .setIsLoading:
-                return .build(with: state, isFetchingData: true)
-            case let .fetchedData(result):
-                switch result {
-                case let .success(episodes):
-                    return ViewState(
-                        isFetchingData: false, allEpisodes: episodes, fetchDataError: nil
-                    )
-                case let .failure(error):
-                    return ViewState(
-                        isFetchingData: false, allEpisodes: state.allEpisodes, fetchDataError: error
-                    )
-                }
-            case .confirmErrorAlert:
-                return .build(with: state, fetchDataError: nil)
-            }
-        }
-    }
-    
     @MainActor
-    final class FetchEpisodeMiddleware {
-        lazy var process: EpisodesStore.Middleware = { [weak self] state, action in
-            switch action {
-            case let .fetchData(isForce):
-                guard let self else {
-                    return AsyncStream {
-                        $0.yield(.fetchedData(.failure(ViewError.selfIsNull)))
-                        $0.finish()
+    final class ViewReducer {
+        lazy var process: EpisodesStore.Reducer = { [weak self] state, action in
+            AsyncStream { continuation in
+                Task {
+                    defer { continuation.finish() }
+                    
+                    guard let self else {
+                        continuation.yield(.build(with: state, fetchDataError: ViewError.selfIsNull))
+                        return
                     }
+                    
+                    let newState: ViewState
+                    
+                    switch action {
+                    case .fetchData where state.isFetchingData:
+                        newState = state
+                    case let .fetchData(isForce):
+                        do {
+                            let serverFetching: () -> Void = {
+                                continuation.yield(.build(with: state, isFetchingData: true))
+                            }
+                            
+                            let episodes = isForce
+                                ? try await self.fetchDataFromServer(serverFetching: serverFetching)
+                                : try await self.fetchDataFromDB(serverFetching: serverFetching)
+                            
+                            newState = ViewState(
+                                isFetchingData: false, allEpisodes: episodes, fetchDataError: nil
+                            )
+                        } catch {
+                            newState = ViewState(
+                                isFetchingData: false,
+                                allEpisodes: state.allEpisodes,
+                                fetchDataError: error
+                            )
+                        }
+                    case .confirmErrorAlert:
+                        newState = ViewState.build(with: state, fetchDataError: nil)
+                    }
+                    
+                    continuation.yield(newState)
                 }
-
-                let isFetching = state.isFetchingData
-                return isForce
-                    ? self.fetchDataFromServer(withIsFetching: isFetching)
-                    : self.fetchDataFromDB(withIsFetching: isFetching)
-            case .setIsLoading, .fetchedData, .confirmErrorAlert:
-                return AsyncStream { $0.finish() }
             }
         }
         
@@ -120,47 +119,29 @@ extension EpisodesView {
             self.hasServerNewEpisodes = hasServerNewEpisodes
         }
         
-        private func fetchDataFromDB(withIsFetching isFetching: Bool) -> AsyncStream<ViewAction> {
+        private func fetchDataFromDB(serverFetching: () -> Void) async throws -> [Episode] {
             if hasServerNewEpisodes {
-                return fetchDataFromServer(withIsFetching: isFetching)
+                return try await fetchDataFromServer(serverFetching: serverFetching)
             } else {
-                return AsyncStream { continuation in
-                    Task {
-                        do {
-                            let episodes = try dataProvideable.fetch(fetchEpisodesDescriptor)
-                            continuation.yield(.fetchedData(.success(episodes)))
-                        } catch {
-                            await Log.data.add(error: error)
-                            continuation.yield(.fetchedData(.failure(error)))
-                        }
-                        continuation.finish()
-                    }
+                do {
+                    return try dataProvideable.fetch(fetchEpisodesDescriptor)
+                } catch {
+                    await Log.data.add(error: error)
+                    throw error
                 }
             }
         }
         
-        private func fetchDataFromServer(withIsFetching isFetching: Bool) -> AsyncStream<ViewAction> {
-            guard !isFetching else {
-                return AsyncStream { $0.finish() }
-            }
+        private func fetchDataFromServer(serverFetching: () -> Void) async throws -> [Episode] {
+            serverFetching()
             
-            return AsyncStream { continuation in
-                Task {
-                    continuation.yield(.setIsLoading)
-
-                    do {
-                        let htmlEpisodes = try await htmlConvertable.loadEpisodes()
-                        try dataProvideable.add(htmlEpisodes)
-                        let episodes = try dataProvideable.fetch(fetchEpisodesDescriptor)
-                        
-                        continuation.yield(.fetchedData(.success(episodes)))
-                    } catch {
-                        await Log.network.add(error: error)
-                        continuation.yield(.fetchedData(.failure(error)))
-                    }
-
-                    continuation.finish()
-                }
+            do {
+                let htmlEpisodes = try await htmlConvertable.loadEpisodes()
+                try dataProvideable.add(htmlEpisodes)
+                return try dataProvideable.fetch(fetchEpisodesDescriptor)
+            } catch {
+                await Log.network.add(error: error)
+                throw error
             }
         }
     }

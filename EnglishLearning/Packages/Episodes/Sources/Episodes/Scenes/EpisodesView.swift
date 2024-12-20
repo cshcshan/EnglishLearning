@@ -9,14 +9,14 @@ import Core
 import SwiftUI
 
 public struct EpisodesView: View {
-    typealias EpisodesStore = OldStore<ViewState, ViewAction>
+    typealias EpisodesStore = Store<ViewState, ViewAction>
 
     @State private(set) var store: EpisodesStore
     private let htmlConvertable: HtmlConvertable
     private let dataSource: DataSource
-    // Store `fetchEpisodeMiddleware` as a property of `EpisodesView` to prevent `[weak self]` from
-    // being null in `FetchEpisodeMiddleware.process`
-    private let fetchEpisodeMiddleware: FetchEpisodeMiddleware
+    // Store `reducer` as a property of `EpisodesView` to prevent `[weak self]` from being null in
+    // `ViewReducer.process`
+    private let reducer: ViewReducer
     
     public var body: some View {
         NavigationStack {
@@ -77,18 +77,13 @@ public struct EpisodesView: View {
         self.htmlConvertable = htmlConvertable
         self.dataSource = dataSource
 
-        let reducer = ViewReducer()
         let serverNewEpisodesChecker = ServerEpisodesChecker(dataSource: dataSource)
-        self.fetchEpisodeMiddleware = FetchEpisodeMiddleware(
+        self.reducer = ViewReducer(
             htmlConvertable: htmlConvertable,
             dataProvideable: dataSource,
             hasServerNewEpisodes: serverNewEpisodesChecker.hasServerNewEpisodes(with: Date())
         )
-        self.store = EpisodesStore(
-            initialState: .default,
-            reducer: reducer.process,
-            middlewares: [fetchEpisodeMiddleware.process]
-        )
+        self.store = EpisodesStore(initialState: .default, reducer: reducer.process)
     }
 }
 

@@ -45,7 +45,6 @@ struct EpisodesViewTests {
                 isForceFetch: true,
                 hasServerNewEpisodes: true,
                 expectedStates: [
-                    .default,
                     .build(with: .default, isFetchingData: true),
                     .build(with: .default, allEpisodes: .serverEpisodes)
                 ],
@@ -56,7 +55,6 @@ struct EpisodesViewTests {
                 isForceFetch: false,
                 hasServerNewEpisodes: true,
                 expectedStates: [
-                    .default,
                     .build(with: .default, isFetchingData: true),
                     .build(with: .default, allEpisodes: .serverEpisodes)
                 ],
@@ -66,10 +64,7 @@ struct EpisodesViewTests {
                 isFetching: false,
                 isForceFetch: false,
                 hasServerNewEpisodes: false,
-                expectedStates: [
-                    .default,
-                    .build(with: .default, allEpisodes: .localEpisodes)
-                ],
+                expectedStates: [.build(with: .default, allEpisodes: .localEpisodes)],
                 expectedLoadEpisodesCount: 0
             ),
             Arguments(
@@ -85,7 +80,6 @@ struct EpisodesViewTests {
                 isForceFetch: true,
                 hasServerNewEpisodes: false,
                 expectedStates: [
-                    .default,
                     .build(with: .default, isFetchingData: true),
                     .build(with: .default, allEpisodes: .serverEpisodes)
                 ],
@@ -102,7 +96,7 @@ struct EpisodesViewTests {
 
         let mockHtmlConverter = MockHtmlConverter()
         let mockDataSource = try DataSource.mock(with: localEpisodes)
-        let fetchEpisodeMiddleware = EpisodesView.FetchEpisodeMiddleware(
+        let reducer = EpisodesView.ViewReducer(
             htmlConvertable: mockHtmlConverter,
             dataProvideable: mockDataSource,
             hasServerNewEpisodes: hasServerNewEpisodes
@@ -110,8 +104,7 @@ struct EpisodesViewTests {
         
         let sut = ViewStore(
             initialState: .build(with: .default, isFetchingData: isFetching),
-            reducer: ViewReducer().process,
-            middlewares: [fetchEpisodeMiddleware.process]
+            reducer: reducer.process
         )
         
         var actualStates: [ViewState] = []
@@ -134,7 +127,6 @@ struct EpisodesViewTests {
                 isFetching: false,
                 isForceFetch: true,
                 expectedStates: [
-                    .default,
                     .build(with: .default, isFetchingData: true),
                     .build(with: .default, fetchDataError: DummyError.fetchServerDataError)
                 ],
@@ -144,10 +136,7 @@ struct EpisodesViewTests {
             ErrorArguments(
                 isFetching: false,
                 isForceFetch: false,
-                expectedStates: [
-                    .default,
-                    .build(with: .default, fetchDataError: DummyError.fetchLocalDataError)
-                ],
+                expectedStates: [.build(with: .default, fetchDataError: DummyError.fetchLocalDataError)],
                 expectedLoadLocalEpisodesCount: 1,
                 expectedLoadServerEpisodesCount: 0
             )
@@ -159,7 +148,7 @@ struct EpisodesViewTests {
 
         let mockHtmlConverter = MockHtmlConverter(loadEpisodesResult: .failure(.fetchServerDataError))
         let mockDataSource = MockDataSource(fetchResult: .failure(.fetchLocalDataError))
-        let fetchEpisodeMiddleware = EpisodesView.FetchEpisodeMiddleware(
+        let reducer = EpisodesView.ViewReducer(
             htmlConvertable: mockHtmlConverter,
             dataProvideable: mockDataSource,
             hasServerNewEpisodes: false
@@ -167,8 +156,7 @@ struct EpisodesViewTests {
         
         let sut = ViewStore(
             initialState: .build(with: .default, isFetchingData: isFetching),
-            reducer: ViewReducer().process,
-            middlewares: [fetchEpisodeMiddleware.process]
+            reducer: reducer.process
         )
         
         var actualStates: [ViewState] = []
@@ -196,7 +184,7 @@ struct EpisodesViewTests {
     func confirmErrorAlert(arguments: ConfirmErrorArguments) async throws {
         let mockHtmlConverter = MockHtmlConverter()
         let mockDataSource = MockDataSource()
-        let fetchEpisodeMiddleware = EpisodesView.FetchEpisodeMiddleware(
+        let reducer = EpisodesView.ViewReducer(
             htmlConvertable: mockHtmlConverter,
             dataProvideable: mockDataSource,
             hasServerNewEpisodes: false
@@ -210,8 +198,7 @@ struct EpisodesViewTests {
                 allEpisodes: episodes,
                 fetchDataError: DummyError.fetchServerDataError
             ),
-            reducer: ViewReducer().process,
-            middlewares: [fetchEpisodeMiddleware.process]
+            reducer: reducer.process
         )
         
         let dummyError = try #require(sut.state.fetchDataError as? DummyError)
