@@ -62,7 +62,7 @@ struct EpisodeDetailViewTests {
             try mockDataSource.add([episodeDetail])
         }
 
-        let fetchDetailMiddleware = EpisodeDetailView.FetchDetailMiddleware(
+        let reducer = EpisodeDetailView.ViewReducer(
             htmlConvertable: mockHtmlConverter,
             dataSource: mockDataSource,
             episodeID: "Episode 241205",
@@ -74,10 +74,10 @@ struct EpisodeDetailViewTests {
                 title: "Can you trust ancestry DNA kits?",
                 imageURL: imageURL,
                 scriptAttributedString: nil,
-                audioURL: nil
+                audioURL: nil,
+                fetchDataError: nil
             ),
-            reducer: ViewReducer().process,
-            middlewares: [fetchDetailMiddleware.process]
+            reducer: reducer.process
         )
         await sut.send(.fetchData)
         
@@ -97,7 +97,7 @@ struct EpisodeDetailViewTests {
         let mockHtmlConverter = MockHtmlConverter()
         let mockDataSource = try DataSource(with: .mock(isStoredInMemoryOnly: true))
 
-        let fetchDetailMiddleware = EpisodeDetailView.FetchDetailMiddleware(
+        let reducer = EpisodeDetailView.ViewReducer(
             htmlConvertable: mockHtmlConverter,
             dataSource: mockDataSource,
             episodeID: "Episode 241205",
@@ -112,8 +112,7 @@ struct EpisodeDetailViewTests {
                 audioURL: nil,
                 fetchDataError: DummyError.fetchServerDataError
             ),
-            reducer: ViewReducer().process,
-            middlewares: [fetchDetailMiddleware.process]
+            reducer: reducer.process
         )
         
         let dummyError = try #require(sut.state.fetchDataError as? DummyError)

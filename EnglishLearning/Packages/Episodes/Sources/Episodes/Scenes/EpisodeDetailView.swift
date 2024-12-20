@@ -10,11 +10,10 @@ import AudioPlayer
 import SwiftUI
 
 struct EpisodeDetailView: View {
-    typealias EpisodeDetailStore = OldStore<ViewState, ViewAction>
+    typealias EpisodeDetailStore = Store<ViewState, ViewAction>
     
     @State private(set) var store: EpisodeDetailStore
-
-    private let fetchDetailMiddleware: FetchDetailMiddleware
+    private let reducer: ViewReducer
 
     var body: some View {
         VStack(spacing: 0) {
@@ -60,22 +59,15 @@ struct EpisodeDetailView: View {
         dataSource: DataSource,
         episode: Episode
     ) {
-        let reducer = ViewReducer()
-        self.fetchDetailMiddleware = FetchDetailMiddleware(
+        self.reducer = ViewReducer(
             htmlConvertable: htmlConvertable,
             dataSource: dataSource,
             episodeID: episode.id,
             episodePath: episode.urlString
         )
         self.store = EpisodeDetailStore(
-            initialState: ViewState(
-                title: episode.title,
-                imageURL: episode.imageURL,
-                scriptAttributedString: nil,
-                audioURL: nil
-            ),
-            reducer: reducer.process,
-            middlewares: [fetchDetailMiddleware.process]
+            initialState: .default(with: episode),
+            reducer: reducer.process
         )
     }
 }

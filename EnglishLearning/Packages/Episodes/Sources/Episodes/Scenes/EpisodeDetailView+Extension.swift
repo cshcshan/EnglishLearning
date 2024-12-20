@@ -17,89 +17,97 @@ extension EpisodeDetailView {
         let audioURL: URL?
         let fetchDataError: Error?
         
-        init(
-            title: String?,
-            imageURL: URL?,
-            scriptAttributedString: AttributedString?,
-            audioURL: URL?,
-            fetchDataError: Error? = nil
-        ) {
-            self.title = title
-            self.imageURL = imageURL
-            self.scriptAttributedString = scriptAttributedString
-            self.audioURL = audioURL
-            self.fetchDataError = fetchDataError
+        static func `default`(with episode: Episode) -> ViewState {
+            ViewState(
+                title: episode.title,
+                imageURL: episode.imageURL,
+                scriptAttributedString: nil,
+                audioURL: nil,
+                fetchDataError: nil
+            )
+        }
+        
+        static func build(
+            with state: ViewState,
+            scriptAttributedString: AttributedString? = nil,
+            audioURL: URL? = nil
+        ) -> ViewState {
+            build(
+                with: state,
+                scriptAttributedString: scriptAttributedString,
+                audioURL: audioURL,
+                fetchDataError: state.fetchDataError
+            )
+        }
+        
+        static func build(
+            with state: ViewState,
+            scriptAttributedString: AttributedString? = nil,
+            audioURL: URL? = nil,
+            fetchDataError: Error?
+        ) -> ViewState {
+            ViewState(
+                title: state.title,
+                imageURL: state.imageURL,
+                scriptAttributedString: scriptAttributedString ?? state.scriptAttributedString,
+                audioURL: audioURL ?? state.audioURL,
+                fetchDataError: fetchDataError
+            )
         }
     }
     
     enum ViewAction {
         case fetchData
-        case fetchedData(Result<EpisodeDetail, Error>)
         case confirmErrorAlert
     }
     
-    struct ViewReducer {
-        let process: EpisodeDetailStore.Reducer = { state, action in
-            switch action {
-            case .fetchData:
-                return state
-            case let .fetchedData(result):
-                switch result {
-                case let .success(episodeDetail):
-                    let attributedString: AttributedString?
-                    if let scriptHtml = episodeDetail.scriptHtml {
-                        attributedString = try? AttributedString.html(scriptHtml, fontSize: "17.0")
-                    } else {
-                        attributedString = nil
+    @MainActor
+    final class ViewReducer {
+        lazy var process: EpisodeDetailStore.Reducer = { [weak self] state, action in
+            AsyncStream { continuation in
+                Task {
+                    defer { continuation.finish() }
+                    
+                    guard let self else {
+                        continuation.yield(.build(with: state, fetchDataError: ViewError.selfIsNull))
+                        return
                     }
                     
-                    return ViewState(
-                        title: state.title,
-                        imageURL: state.imageURL,
-                        scriptAttributedString: attributedString ?? state.scriptAttributedString,
-                        audioURL: episodeDetail.audioURL
-                    )
-                case let .failure(error):
-                    return ViewState(
-                        title: state.title,
-                        imageURL: state.imageURL,
-                        scriptAttributedString: state.scriptAttributedString,
-                        audioURL: state.audioURL,
-                        fetchDataError: error
-                    )
-                }
-            case .confirmErrorAlert:
-                return ViewState(
-                    title: state.title,
-                    imageURL: state.imageURL,
-                    scriptAttributedString: state.scriptAttributedString,
-                    audioURL: state.audioURL,
-                    fetchDataError: nil
-                )
-            }
-        }
-    }
-    
-    @MainActor
-    final class FetchDetailMiddleware {
-        lazy var process: EpisodeDetailStore.Middleware = { [weak self] state, action in
-            switch action {
-            case .fetchData:
-                guard let self else {
-                    return AsyncStream {
-                        $0.yield(.fetchedData(.failure(ViewError.selfIsNull)))
-                        $0.finish()
+                    let newState: ViewState
+                    
+                    switch action {
+                    case .fetchData:
+                        guard let episodeID = self.episodeID else {
+                            continuation.yield(
+                                .build(with: state, fetchDataError: ViewError.episodeIDIsNull)
+                            )
+                            return
+                        }
+                        
+                        do {
+                            let episodeDetail = try await self.fetchData(withEpisodeID: episodeID)
+                            
+                            let attributedString: AttributedString?
+                            if let scriptHtml = episodeDetail.scriptHtml {
+                                attributedString = try AttributedString.html(scriptHtml, fontSize: "17.0")
+                            } else {
+                                attributedString = nil
+                            }
+                            
+                            newState = .build(
+                                with: state,
+                                scriptAttributedString: attributedString,
+                                audioURL: episodeDetail.audioURL
+                            )
+                        } catch {
+                            newState = .build(with: state, fetchDataError: error)
+                        }
+                    case .confirmErrorAlert:
+                        newState = .build(with: state, fetchDataError: nil)
                     }
+                    
+                    continuation.yield(newState)
                 }
-                guard let episodeID else {
-                    return AsyncStream {
-                        $0.yield(.fetchedData(.failure(ViewError.episodeIDIsNull)))
-                        $0.finish()
-                    }
-                }
-                return self.fetchData(withEpisodeID: episodeID)
-            case .fetchedData, .confirmErrorAlert:
-                return AsyncStream { $0.finish() }
             }
         }
         
@@ -120,50 +128,33 @@ extension EpisodeDetailView {
             self.episodePath = episodePath
         }
         
-        private func fetchData(withEpisodeID episodeID: String) -> AsyncStream<ViewAction> {
+        private func fetchData(withEpisodeID episodeID: String) async throws -> EpisodeDetail {
             let predicate = #Predicate<EpisodeDetail> { $0.id == episodeID }
             let fetchDescriptor = FetchDescriptor(predicate: predicate)
-
-            do {
-                guard let episodeDetail = try dataSource.fetch(fetchDescriptor).first else {
-                    return fetchDataFromServer()
-                }
-                return AsyncStream {
-                    $0.yield(.fetchedData(.success(episodeDetail)))
-                    $0.finish()
-                }
-            } catch {
-                return AsyncStream { continuation in
-                    Task {
-                        await Log.data.add(error: error)
-                        continuation.yield(.fetchedData(.failure(error)))
-                        continuation.finish()
-                    }
+            let episodeDetail = try dataSource.fetch(fetchDescriptor).first
+            
+            if let episodeDetail {
+                return episodeDetail
+            } else {
+                do {
+                    return try await fetchDataFromServer()
+                } catch {
+                    await Log.data.add(error: error)
+                    throw error
                 }
             }
         }
         
-        private func fetchDataFromServer() -> AsyncStream<ViewAction> {
-            AsyncStream { continuation in
-                Task {
-                    do {
-                        let episodeDetail = try await htmlConvertable.loadEpisodeDetail(
-                            withID: episodeID, path: episodePath
-                        )
-                        
-                        if let episodeDetail {
-                            try dataSource.add([episodeDetail])
-                            continuation.yield(.fetchedData(.success(episodeDetail)))
-                        } else {
-                            let episodeDetail = EpisodeDetail(id: episodeID)
-                            continuation.yield(.fetchedData(.success(episodeDetail)))
-                        }
-                    } catch {
-                        await Log.network.add(error: error)
-                        continuation.yield(.fetchedData(.failure(error)))
-                    }
-                    continuation.finish()
-                }
+        private func fetchDataFromServer() async throws -> EpisodeDetail {
+            do {
+                let episodeDetail = try await htmlConvertable.loadEpisodeDetail(
+                    withID: episodeID, path: episodePath
+                )
+                try dataSource.add([episodeDetail])
+                return episodeDetail
+            } catch {
+                await Log.network.add(error: error)
+                throw error
             }
         }
     }

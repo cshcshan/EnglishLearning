@@ -47,9 +47,11 @@ actor MockHtmlConverter: HtmlConvertable {
         }
     }
     
-    func loadEpisodeDetail(withID id: String?, path: String?) async throws -> EpisodeDetail? {
+    func loadEpisodeDetail(withID id: String?, path: String?) async throws -> EpisodeDetail {
         loadEpisodeDetailCount += 1
-        guard let loadEpisodeDetailResult else { return nil }
+        guard let loadEpisodeDetailResult else {
+            return EpisodeDetail(id: nil)
+        }
 
         switch loadEpisodeDetailResult {
         case let .success(episodeDetail):

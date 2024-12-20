@@ -13,7 +13,7 @@ public protocol HtmlConvertable {
     @MainActor
     func loadEpisodes() async throws -> [Episode]
     @MainActor
-    func loadEpisodeDetail(withID id: String?, path: String?) async throws -> EpisodeDetail?
+    func loadEpisodeDetail(withID id: String?, path: String?) async throws -> EpisodeDetail
 }
 
 public actor HtmlConverter: HtmlConvertable {
@@ -51,7 +51,7 @@ public actor HtmlConverter: HtmlConvertable {
 
 extension HtmlConverter {
     
-    public func loadEpisodeDetail(withID id: String?, path: String?) async throws -> EpisodeDetail? {
+    public func loadEpisodeDetail(withID id: String?, path: String?) async throws -> EpisodeDetail {
         await log.add(message: "Enter HtmlConvertable.loadEpisodeDetail()")
         
         guard let id else {
