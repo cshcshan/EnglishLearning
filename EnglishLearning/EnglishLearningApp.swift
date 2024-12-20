@@ -36,5 +36,17 @@ struct EnglishLearningApp: App {
         } catch {
             fatalError()
         }
+        
+        printSandbox()
+    }
+    
+    private func printSandbox() {
+        let libraryURL = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first
+        print("Library \(libraryURL?.absoluteString ?? "")")
+        
+        let appGroupURL = FileManager.default.containerURL(
+            forSecurityApplicationGroupIdentifier: Configuration.groupID
+        )
+        print("App Group \(appGroupURL?.absoluteString ?? "")")
     }
 }
