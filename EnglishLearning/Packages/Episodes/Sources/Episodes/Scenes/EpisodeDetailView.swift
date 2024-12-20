@@ -10,7 +10,7 @@ import AudioPlayer
 import SwiftUI
 
 struct EpisodeDetailView: View {
-    typealias EpisodeDetailStore = Store<ViewState, ViewAction>
+    typealias EpisodeDetailStore = OldStore<ViewState, ViewAction>
     
     @State private(set) var store: EpisodeDetailStore
 

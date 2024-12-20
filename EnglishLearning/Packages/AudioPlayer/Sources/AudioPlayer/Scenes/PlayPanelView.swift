@@ -9,7 +9,7 @@ import Core
 import SwiftUI
 
 public struct PlayPanelView: View {
-    typealias ViewStore = Store<ViewState, ViewAction>
+    typealias ViewStore = OldStore<ViewState, ViewAction>
     
     enum SpeedRate: Float, CaseIterable {
         case half = 0.5

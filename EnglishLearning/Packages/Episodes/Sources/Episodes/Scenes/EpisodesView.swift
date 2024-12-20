@@ -9,7 +9,7 @@ import Core
 import SwiftUI
 
 public struct EpisodesView: View {
-    typealias EpisodesStore = Store<ViewState, ViewAction>
+    typealias EpisodesStore = OldStore<ViewState, ViewAction>
 
     @State private(set) var store: EpisodesStore
     private let htmlConvertable: HtmlConvertable

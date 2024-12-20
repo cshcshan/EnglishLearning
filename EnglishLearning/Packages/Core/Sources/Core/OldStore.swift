@@ -1,5 +1,5 @@
 //
-//  Store.swift
+//  OldStore.swift
 //  Core
 //
 //  Created by Han Chen on 2024/11/27.
@@ -11,7 +11,7 @@ import Observation
 /// Inspired by https://github.com/mecid/swift-unidirectional-flow
 @MainActor
 @Observable
-public final class Store<State: Sendable, Action: Sendable> {
+public final class OldStore<State: Sendable, Action: Sendable> {
     public typealias Reducer = @MainActor (State, Action) -> State
     public typealias Middleware = @MainActor (State, Action) -> AsyncStream<Action>
 
