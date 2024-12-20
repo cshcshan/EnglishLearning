@@ -12,13 +12,13 @@ import SwiftData
 extension EpisodesView {
     struct ViewState {
         let isFetchingData: Bool
-        let episodes: [Episode]
+        let allEpisodes: [Episode]
         let fetchDataError: Error?
 
         static var `default`: ViewState {
             ViewState(
                 isFetchingData: false,
-                episodes: [],
+                allEpisodes: [],
                 fetchDataError: nil
             )
         }
@@ -26,12 +26,12 @@ extension EpisodesView {
         static func build(
             with state: ViewState,
             isFetchingData: Bool? = nil,
-            episodes: [Episode]? = nil
+            allEpisodes: [Episode]? = nil
         ) -> ViewState {
             build(
                 with: state,
                 isFetchingData: isFetchingData,
-                episodes: episodes,
+                allEpisodes: allEpisodes,
                 fetchDataError: state.fetchDataError
             )
         }
@@ -39,12 +39,12 @@ extension EpisodesView {
         static func build(
             with state: ViewState,
             isFetchingData: Bool? = nil,
-            episodes: [Episode]? = nil,
+            allEpisodes: [Episode]? = nil,
             fetchDataError: Error?
         ) -> ViewState {
             ViewState(
                 isFetchingData: isFetchingData ?? state.isFetchingData,
-                episodes: episodes ?? state.episodes,
+                allEpisodes: allEpisodes ?? state.allEpisodes,
                 fetchDataError: fetchDataError
             )
         }
@@ -68,11 +68,11 @@ extension EpisodesView {
                 switch result {
                 case let .success(episodes):
                     return ViewState(
-                        isFetchingData: false, episodes: episodes, fetchDataError: nil
+                        isFetchingData: false, allEpisodes: episodes, fetchDataError: nil
                     )
                 case let .failure(error):
                     return ViewState(
-                        isFetchingData: false, episodes: state.episodes, fetchDataError: error
+                        isFetchingData: false, allEpisodes: state.allEpisodes, fetchDataError: error
                     )
                 }
             case .confirmErrorAlert:
@@ -175,7 +175,7 @@ extension EpisodesView.ViewState: CustomStringConvertible {
         """
         [EpisodesView.ViewState]
         isFetchingData: \(isFetchingData)
-        episodes: \(episodes.map(\.description).joined(separator: "\n"))
+        allEpisodes: \(allEpisodes.map(\.description).joined(separator: "\n"))
         fetchDataError: \(fetchDataError.map { $0.localizedDescription } ?? "nil")
         """
     }

@@ -47,7 +47,7 @@ struct EpisodesViewTests {
                 expectedStates: [
                     .default,
                     .build(with: .default, isFetchingData: true),
-                    .build(with: .default, episodes: .serverEpisodes)
+                    .build(with: .default, allEpisodes: .serverEpisodes)
                 ],
                 expectedLoadEpisodesCount: 1
             ),
@@ -58,7 +58,7 @@ struct EpisodesViewTests {
                 expectedStates: [
                     .default,
                     .build(with: .default, isFetchingData: true),
-                    .build(with: .default, episodes: .serverEpisodes)
+                    .build(with: .default, allEpisodes: .serverEpisodes)
                 ],
                 expectedLoadEpisodesCount: 1
             ),
@@ -68,7 +68,7 @@ struct EpisodesViewTests {
                 hasServerNewEpisodes: false,
                 expectedStates: [
                     .default,
-                    .build(with: .default, episodes: .localEpisodes)
+                    .build(with: .default, allEpisodes: .localEpisodes)
                 ],
                 expectedLoadEpisodesCount: 0
             ),
@@ -87,7 +87,7 @@ struct EpisodesViewTests {
                 expectedStates: [
                     .default,
                     .build(with: .default, isFetchingData: true),
-                    .build(with: .default, episodes: .serverEpisodes)
+                    .build(with: .default, allEpisodes: .serverEpisodes)
                 ],
                 expectedLoadEpisodesCount: 1
             )
@@ -207,7 +207,7 @@ struct EpisodesViewTests {
         let sut = ViewStore(
             initialState: ViewState(
                 isFetchingData: arguments.isFetching,
-                episodes: episodes,
+                allEpisodes: episodes,
                 fetchDataError: DummyError.fetchServerDataError
             ),
             reducer: ViewReducer().process,
@@ -217,13 +217,13 @@ struct EpisodesViewTests {
         let dummyError = try #require(sut.state.fetchDataError as? DummyError)
         #expect(dummyError == .fetchServerDataError)
         #expect(sut.state.isFetchingData == arguments.isFetching)
-        #expect(sut.state.episodes == episodes)
+        #expect(sut.state.allEpisodes == episodes)
         
         await sut.send(.confirmErrorAlert)
         
         #expect(sut.state.fetchDataError == nil)
         #expect(sut.state.isFetchingData == arguments.isFetching)
-        #expect(sut.state.episodes == episodes)
+        #expect(sut.state.allEpisodes == episodes)
     }
 }
 

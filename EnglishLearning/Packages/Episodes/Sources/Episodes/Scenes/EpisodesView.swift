@@ -20,7 +20,7 @@ public struct EpisodesView: View {
     
     public var body: some View {
         NavigationStack {
-            List(store.state.episodes) { episode in
+            List(store.state.allEpisodes) { episode in
                 ZStack {
                     // Since `NavigationLink` automatically adds a `>` symbol for each item,
                     // use `EpisodeView` as an overlay on top of the `NavigationLink`
