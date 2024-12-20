@@ -24,29 +24,29 @@ struct ServerEpisodesCheckerTests {
             Arguments(today: .build(year: 2024, month: 12, day: 4)!, localEpisodes: [], expectedResult: true),
             Arguments(
                 today: .build(year: 2024, month: 12, day: 4)!,
-                localEpisodes: [Episode.dummy(id: "1", date: .build(year: 2024, month: 11, day: 28)!)],
+                localEpisodes: [.dummy(id: "1", date: .build(year: 2024, month: 11, day: 28)!)],
                 expectedResult: false
             ),
             Arguments(today: .build(year: 2024, month: 12, day: 5)!, localEpisodes: [], expectedResult: true),
             Arguments(
                 today: .build(year: 2024, month: 12, day: 5)!,
-                localEpisodes: [Episode.dummy(id: "1", date: .build(year: 2024, month: 11, day: 28)!)],
+                localEpisodes: [.dummy(id: "1", date: .build(year: 2024, month: 11, day: 28)!)],
                 expectedResult: true
             ),
             Arguments(
                 today: .build(year: 2024, month: 12, day: 5)!,
-                localEpisodes: [Episode.dummy(id: "1", date: .build(year: 2024, month: 12, day: 5)!)],
+                localEpisodes: [.dummy(id: "1", date: .build(year: 2024, month: 12, day: 5)!)],
                 expectedResult: false
             ),
             Arguments(today: .build(year: 2024, month: 12, day: 6)!, localEpisodes: [], expectedResult: true),
             Arguments(
                 today: .build(year: 2024, month: 12, day: 6)!,
-                localEpisodes: [Episode.dummy(id: "1", date: .build(year: 2024, month: 11, day: 28)!)],
+                localEpisodes: [.dummy(id: "1", date: .build(year: 2024, month: 11, day: 28)!)],
                 expectedResult: true
             ),
             Arguments(
                 today: .build(year: 2024, month: 12, day: 6)!,
-                localEpisodes: [Episode.dummy(id: "1", date: .build(year: 2024, month: 12, day: 5)!)],
+                localEpisodes: [.dummy(id: "1", date: .build(year: 2024, month: 12, day: 5)!)],
                 expectedResult: false
             )
         ]
@@ -72,11 +72,5 @@ extension Date {
             day: day
         )
         return dateComponents.date
-    }
-}
-
-extension Episode {
-    fileprivate static func dummy(id: String, date: Date) -> Episode {
-        Episode(id: id, title: nil, desc: nil, date: date, imageURLString: nil, urlString: nil)
     }
 }

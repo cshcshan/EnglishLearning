@@ -20,6 +20,10 @@ extension Episode {
             urlString: "urlString \(index)"
         )
     }
+    
+    static func dummy(id: String, date: Date) -> Episode {
+        Episode(id: id, title: nil, desc: nil, date: date, imageURLString: nil, urlString: nil)
+    }
 }
 
 extension [Episode] {
