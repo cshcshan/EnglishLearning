@@ -63,17 +63,3 @@ extension Episode: Equatable {
             && lhs.urlString == rhs.urlString
     }
 }
-
-extension Episode: CustomStringConvertible {
-    public var description: String {
-        """
-        [Episode]
-        id: \(id ?? "nil"),
-        title: \(title ?? "nil"),
-        desc: \(desc ?? "nil"),
-        date: \(date.map { DateFormatter.displayDate.string(from: $0) } ?? "nil"),
-        imageURLString: \(imageURLString ?? "nil"),
-        urlString: \(urlString ?? "nil")
-        """
-    }
-}

@@ -60,6 +60,8 @@ extension EpisodesView {
     enum ViewAction {
         case fetchData(isForce: Bool)
         case confirmErrorAlert
+        case addFavorite(episodeID: String)
+        case removeFavorite(episodeID: String)
     }
     
     @MainActor
@@ -91,15 +93,10 @@ extension EpisodesView {
                                 ? try await self.fetchDataFromServer(serverFetching: serverFetching)
                                 : try await self.fetchDataFromDB(serverFetching: serverFetching)
                             
-                            let favoriteEpisodeIDs = self.userDefaultsManagerable.favoriteEpisodeIDs
-                            let favoriteEpisodes = favoriteEpisodeIDs.flatMap { id in
-                                episodes.filter { $0.id == id }
-                            }
-                            
                             newState = ViewState(
                                 isFetchingData: false,
                                 allEpisodes: episodes,
-                                favoriteEpisodes: favoriteEpisodes,
+                                favoriteEpisodes: self.favoriteEpisodes(with: episodes),
                                 fetchDataError: nil
                             )
                         } catch {
@@ -111,6 +108,18 @@ extension EpisodesView {
                         }
                     case .confirmErrorAlert:
                         newState = .build(with: state, fetchDataError: nil)
+                    case let .addFavorite(episodeID):
+                        self.userDefaultsManagerable.favoriteEpisodeIDs.insert(episodeID)
+                        newState = .build(
+                            with: state,
+                            favoriteEpisodes: self.favoriteEpisodes(with: state.allEpisodes)
+                        )
+                    case let .removeFavorite(episodeID):
+                        self.userDefaultsManagerable.favoriteEpisodeIDs.remove(episodeID)
+                        newState = .build(
+                            with: state,
+                            favoriteEpisodes: self.favoriteEpisodes(with: state.allEpisodes)
+                        )
                     }
                     
                     continuation.yield(.state(newState))
@@ -124,7 +133,7 @@ extension EpisodesView {
 
         private let htmlConvertable: HtmlConvertable
         private let dataProvideable: any DataProvideable
-        private let userDefaultsManagerable: UserDefaultsManagerable
+        private var userDefaultsManagerable: UserDefaultsManagerable
         private let hasServerNewEpisodes: Bool
         
         init(
@@ -164,6 +173,12 @@ extension EpisodesView {
                 throw error
             }
         }
+        
+        private func favoriteEpisodes(with allEpisodes: [Episode]) -> [Episode] {
+            userDefaultsManagerable.favoriteEpisodeIDs.flatMap { id in
+                allEpisodes.filter { $0.id == id }
+            }
+        }
     }
     
     enum ViewError: Error {
@@ -176,7 +191,10 @@ extension EpisodesView.ViewState: CustomStringConvertible {
         """
         [EpisodesView.ViewState]
         isFetchingData: \(isFetchingData)
-        allEpisodes: \(allEpisodes.map(\.description).joined(separator: "\n"))
+        allEpisodes:
+            \(allEpisodes.map { $0.id ?? "null" }.joined(separator: "\n    "))
+        favoriteEpisodes: 
+            \(favoriteEpisodes.map { $0.id ?? "null" }.joined(separator: "\n    "))
         fetchDataError: \(fetchDataError.map { $0.localizedDescription } ?? "nil")
         """
     }
