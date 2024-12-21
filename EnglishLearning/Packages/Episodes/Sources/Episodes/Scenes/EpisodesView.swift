@@ -21,80 +21,19 @@ public struct EpisodesView: View {
     public var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                Picker(
-                    "",
-                    selection: Binding(
-                        get: { store.state.selectedListType },
-                        set: { newValue in
-                            Task { @MainActor in
-                                await store.send(.listTypeTapped(newValue))
-                            }
-                        }
-                    )
-                ) {
-                    ForEach(ListType.allCases, id: \.self) {
-                        Text($0.title)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .padding()
-
-                GeometryReader { geometry in
-                    ScrollView(.horizontal) {
-                        ScrollViewReader { proxy in
-                            HStack {
-                                makeList(episodes: store.state.allEpisodes)
-                                    .frame(width: geometry.size.width, height: geometry.size.height)
-                                    .id(ListType.all)
-                                
-                                makeList(episodes: store.state.favoriteEpisodes)
-                                    .frame(width: geometry.size.width, height: geometry.size.height)
-                                    .id(ListType.favorite)
-                            }
-                            .onChange(of: store.state.selectedListType) { _, newValue in
-                                withAnimation {
-                                    proxy.scrollTo(newValue)
-                                }
-                            }
-                        }
-                    }
-                }
+                makeSegmentedControl()
+                    .padding()
+                makeContent()
             }
-            .refreshable {
-                await store.send(.fetchData(isForce: true))
-            }
-            .task {
-                await store.send(.fetchData(isForce: false))
-            }
+            .refreshable { await store.send(.fetchData(isForce: true)) }
+            .task { await store.send(.fetchData(isForce: false)) }
             .listStyle(.plain)
-            .navigationDestination(for: Episode.self) { episode in
-                EpisodeDetailView(
-                    htmlConvertable: htmlConvertable,
-                    dataSource: dataSource,
-                    episode: episode
-                )
-            }
+            .navigationDestination(for: Episode.self) { makeDetailView(episode: $0) }
             .errorAlert(
                 isPresented: .constant(store.state.fetchDataError != nil),
                 error: store.state.fetchDataError,
-                actions: { _ in
-                    Button(
-                        action: {
-                            Task { await store.send(.confirmErrorAlert) }
-                        },
-                        label: { Text("OK") }
-                    )
-                    Button(
-                        action: {
-                            Task {
-                                await store.send(.confirmErrorAlert)
-                                await store.send(.fetchData(isForce: true))
-                            }
-                        },
-                        label: { Text("Retry") }
-                    )
-                },
-                message: { error in Text(error.recoverySuggestion ?? "") }
+                actions: { _ in makeErrorAlertActions() },
+                message: { Text($0.recoverySuggestion ?? "") }
             )
         }
     }
@@ -115,6 +54,51 @@ public struct EpisodesView: View {
             hasServerNewEpisodes: serverNewEpisodesChecker.hasServerNewEpisodes(with: Date())
         )
         self.store = EpisodesStore(initialState: .default, reducer: reducer.process)
+    }
+    
+    private func makeSegmentedControl() -> some View {
+        Picker(
+            "",
+            selection: Binding(
+                get: { store.state.selectedListType },
+                set: { newValue in
+                    Task { @MainActor in
+                        await store.send(.listTypeTapped(newValue))
+                    }
+                }
+            )
+        ) {
+            ForEach(ListType.allCases, id: \.self) {
+                Text($0.title)
+            }
+        }
+        .pickerStyle(.segmented)
+    }
+    
+    private func makeContent() -> some View {
+        GeometryReader { geometry in
+            ScrollView(.horizontal) {
+                ScrollViewReader { proxy in
+                    HStack {
+                        makeList(episodes: store.state.allEpisodes)
+                            .refreshable {
+                                await store.send(.fetchData(isForce: true))
+                            }
+                            .frame(width: geometry.size.width, height: geometry.size.height)
+                            .id(ListType.all)
+                        
+                        makeList(episodes: store.state.favoriteEpisodes)
+                            .frame(width: geometry.size.width, height: geometry.size.height)
+                            .id(ListType.favorite)
+                    }
+                    .onChange(of: store.state.selectedListType) { _, newValue in
+                        withAnimation {
+                            proxy.scrollTo(newValue)
+                        }
+                    }
+                }
+            }
+        }
     }
     
     private func makeList(episodes: [Episode]) -> some View {
@@ -140,6 +124,34 @@ public struct EpisodesView: View {
             }
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
+        }
+    }
+    
+    private func makeDetailView(episode: Episode) -> some View {
+        EpisodeDetailView(
+            htmlConvertable: htmlConvertable,
+            dataSource: dataSource,
+            episode: episode
+        )
+    }
+    
+    private func makeErrorAlertActions() -> some View {
+        HStack {
+            Button(
+                action: {
+                    Task { await store.send(.confirmErrorAlert) }
+                },
+                label: { Text("OK") }
+            )
+            Button(
+                action: {
+                    Task {
+                        await store.send(.confirmErrorAlert)
+                        await store.send(.fetchData(isForce: true))
+                    }
+                },
+                label: { Text("Retry") }
+            )
         }
     }
 }
