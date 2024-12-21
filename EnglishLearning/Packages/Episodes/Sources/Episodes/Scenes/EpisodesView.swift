@@ -156,11 +156,25 @@ public struct EpisodesView: View {
     }
 }
 
-#Preview {
+#Preview("Normal") {
     let episodes = [Episode].dummy(withAmount: 10)
 
     let mockHtmlConverter = MockHtmlConverter()
     Task { await mockHtmlConverter.setLoadEpisodesResult(.success(episodes)) }
+    let dataSource = try! DataSource(with: .mock(isStoredInMemoryOnly: true))
+    
+    let mockUserDefaultsManager = MockUserDefaultsManager()
+
+    return EpisodesView(
+        htmlConvertable: mockHtmlConverter,
+        dataSource: dataSource,
+        userDefaultsManagerable: mockUserDefaultsManager
+    )
+}
+
+#Preview("Error") {
+    let mockHtmlConverter = MockHtmlConverter()
+    Task { await mockHtmlConverter.setLoadEpisodesResult(.failure(DummyError.fetchServerDataError)) }
     let dataSource = try! DataSource(with: .mock(isStoredInMemoryOnly: true))
     
     let mockUserDefaultsManager = MockUserDefaultsManager()
