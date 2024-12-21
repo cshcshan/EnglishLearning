@@ -17,6 +17,7 @@ public final class Episode {
     public var date: Date?
     public var imageURLString: String?
     public var urlString: String?
+    public var isFavorite: Bool = false
     
     public init(
         id: String?,
@@ -61,5 +62,6 @@ extension Episode: Equatable {
             && lhs.date == rhs.date
             && lhs.imageURLString == rhs.imageURLString
             && lhs.urlString == rhs.urlString
+            && lhs.isFavorite == rhs.isFavorite
     }
 }
