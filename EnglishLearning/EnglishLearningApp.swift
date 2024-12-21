@@ -19,7 +19,8 @@ struct EnglishLearningApp: App {
         WindowGroup {
             EpisodesView(
                 htmlConvertable: HtmlConverter(),
-                dataSource: dataSource
+                dataSource: dataSource,
+                userDefaultsManagerable: UserDefaultsManager(store: UserDefaults.appGroup)
             )
         }
         .modelContainer(dataSource.modelContainer)

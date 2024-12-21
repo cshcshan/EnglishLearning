@@ -96,9 +96,11 @@ struct EpisodesViewTests {
 
         let mockHtmlConverter = MockHtmlConverter()
         let mockDataSource = try DataSource.mock(with: localEpisodes)
+        let mockUserDefaultsManager = MockUserDefaultsManager()
         let reducer = EpisodesView.ViewReducer(
             htmlConvertable: mockHtmlConverter,
             dataProvideable: mockDataSource,
+            userDefaultsManagerable: mockUserDefaultsManager,
             hasServerNewEpisodes: hasServerNewEpisodes
         )
         
@@ -148,9 +150,11 @@ struct EpisodesViewTests {
 
         let mockHtmlConverter = MockHtmlConverter(loadEpisodesResult: .failure(.fetchServerDataError))
         let mockDataSource = MockDataSource(fetchResult: .failure(.fetchLocalDataError))
+        let mockUserDefaultsManager = MockUserDefaultsManager()
         let reducer = EpisodesView.ViewReducer(
             htmlConvertable: mockHtmlConverter,
             dataProvideable: mockDataSource,
+            userDefaultsManagerable: mockUserDefaultsManager,
             hasServerNewEpisodes: false
         )
         
@@ -184,9 +188,11 @@ struct EpisodesViewTests {
     func confirmErrorAlert(arguments: ConfirmErrorArguments) async throws {
         let mockHtmlConverter = MockHtmlConverter()
         let mockDataSource = MockDataSource()
+        let mockUserDefaultsManager = MockUserDefaultsManager()
         let reducer = EpisodesView.ViewReducer(
             htmlConvertable: mockHtmlConverter,
             dataProvideable: mockDataSource,
+            userDefaultsManagerable: mockUserDefaultsManager,
             hasServerNewEpisodes: false
         )
 
@@ -196,6 +202,7 @@ struct EpisodesViewTests {
             initialState: ViewState(
                 isFetchingData: arguments.isFetching,
                 allEpisodes: episodes,
+                favoriteEpisodes: [],
                 fetchDataError: DummyError.fetchServerDataError
             ),
             reducer: reducer.process

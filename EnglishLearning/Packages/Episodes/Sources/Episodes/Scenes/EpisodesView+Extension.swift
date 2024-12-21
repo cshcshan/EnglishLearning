@@ -8,17 +8,20 @@
 import Core
 import Foundation
 import SwiftData
+import SwiftUI
 
 extension EpisodesView {
     struct ViewState {
         let isFetchingData: Bool
         let allEpisodes: [Episode]
+        let favoriteEpisodes: [Episode]
         let fetchDataError: Error?
 
         static var `default`: ViewState {
             ViewState(
                 isFetchingData: false,
                 allEpisodes: [],
+                favoriteEpisodes: [],
                 fetchDataError: nil
             )
         }
@@ -26,12 +29,14 @@ extension EpisodesView {
         static func build(
             with state: ViewState,
             isFetchingData: Bool? = nil,
-            allEpisodes: [Episode]? = nil
+            allEpisodes: [Episode]? = nil,
+            favoriteEpisodes: [Episode]? = nil
         ) -> ViewState {
             build(
                 with: state,
                 isFetchingData: isFetchingData,
                 allEpisodes: allEpisodes,
+                favoriteEpisodes: favoriteEpisodes,
                 fetchDataError: state.fetchDataError
             )
         }
@@ -40,11 +45,13 @@ extension EpisodesView {
             with state: ViewState,
             isFetchingData: Bool? = nil,
             allEpisodes: [Episode]? = nil,
+            favoriteEpisodes: [Episode]? = nil,
             fetchDataError: Error?
         ) -> ViewState {
             ViewState(
                 isFetchingData: isFetchingData ?? state.isFetchingData,
                 allEpisodes: allEpisodes ?? state.allEpisodes,
+                favoriteEpisodes: favoriteEpisodes ?? state.favoriteEpisodes,
                 fetchDataError: fetchDataError
             )
         }
@@ -84,18 +91,26 @@ extension EpisodesView {
                                 ? try await self.fetchDataFromServer(serverFetching: serverFetching)
                                 : try await self.fetchDataFromDB(serverFetching: serverFetching)
                             
-                            newState = ViewState(
-                                isFetchingData: false, allEpisodes: episodes, fetchDataError: nil
-                            )
-                        } catch {
+                            let favoriteEpisodeIDs = self.userDefaultsManagerable.favoriteEpisodeIDs
+                            let favoriteEpisodes = favoriteEpisodeIDs.flatMap { id in
+                                episodes.filter { $0.id == id }
+                            }
+                            
                             newState = ViewState(
                                 isFetchingData: false,
-                                allEpisodes: state.allEpisodes,
+                                allEpisodes: episodes,
+                                favoriteEpisodes: favoriteEpisodes,
+                                fetchDataError: nil
+                            )
+                        } catch {
+                            newState = .build(
+                                with: state,
+                                isFetchingData: false,
                                 fetchDataError: error
                             )
                         }
                     case .confirmErrorAlert:
-                        newState = ViewState.build(with: state, fetchDataError: nil)
+                        newState = .build(with: state, fetchDataError: nil)
                     }
                     
                     continuation.yield(.state(newState))
@@ -109,15 +124,18 @@ extension EpisodesView {
 
         private let htmlConvertable: HtmlConvertable
         private let dataProvideable: any DataProvideable
+        private let userDefaultsManagerable: UserDefaultsManagerable
         private let hasServerNewEpisodes: Bool
         
         init(
             htmlConvertable: HtmlConvertable,
             dataProvideable: any DataProvideable,
+            userDefaultsManagerable: UserDefaultsManagerable,
             hasServerNewEpisodes: Bool
         ) {
             self.htmlConvertable = htmlConvertable
             self.dataProvideable = dataProvideable
+            self.userDefaultsManagerable = userDefaultsManagerable
             self.hasServerNewEpisodes = hasServerNewEpisodes
         }
         

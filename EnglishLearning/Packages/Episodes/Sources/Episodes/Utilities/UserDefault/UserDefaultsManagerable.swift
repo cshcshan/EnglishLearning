@@ -7,6 +7,6 @@
 
 import Foundation
 
-protocol UserDefaultsManagerable {
+public protocol UserDefaultsManagerable {
     var favoriteEpisodeIDs: Set<String> { get set }
 }
