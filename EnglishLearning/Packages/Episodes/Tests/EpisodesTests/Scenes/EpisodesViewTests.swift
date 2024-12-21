@@ -24,6 +24,12 @@ struct EpisodesViewTests {
         let expectedStates: [ViewState]
         let expectedLoadEpisodesCount: Int
     }
+    
+    struct FetchDataFavoriteArguments {
+        let localAllEpisodes: [Episode]
+        let favoriteEpisodeIDs: Set<String>
+        let expectedFavoriteEpisodes: [Episode]
+    }
 
     struct ErrorArguments {
         let isFetching: Bool
@@ -36,6 +42,20 @@ struct EpisodesViewTests {
     struct ConfirmErrorArguments {
         let isFetching: Bool
         let hasEpisodes: Bool
+    }
+    
+    struct AddFavorite {
+        let initialEpisodes: [Episode]
+        let initialFavoriteEpisodes: [Episode]
+        let addEpisodeID: String
+        let expectedFavoriteEpisodes: [Episode]
+    }
+    
+    struct RemoveFavorite {
+        let initialEpisodes: [Episode]
+        let initialFavoriteEpisodes: [Episode]
+        let removeEpisodeID: String
+        let expectedFavoriteEpisodes: [Episode]
     }
     
     @Test(
@@ -121,6 +141,61 @@ struct EpisodesViewTests {
         
         #expect(actualStates == arguments.expectedStates)
         #expect(await mockHtmlConverter.loadEpisodesCount == arguments.expectedLoadEpisodesCount)
+    }
+    
+    @Test(arguments: [
+        FetchDataFavoriteArguments(
+            localAllEpisodes: [],
+            favoriteEpisodeIDs: [],
+            expectedFavoriteEpisodes: []
+        ),
+        FetchDataFavoriteArguments(
+            localAllEpisodes: [.dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3")],
+            favoriteEpisodeIDs: ["2"],
+            expectedFavoriteEpisodes: [.dummy(id: "2")]
+        ),
+        FetchDataFavoriteArguments(
+            localAllEpisodes: [],
+            favoriteEpisodeIDs: ["10"],
+            expectedFavoriteEpisodes: []
+        ),
+        FetchDataFavoriteArguments(
+            localAllEpisodes: [.dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3")],
+            favoriteEpisodeIDs: ["2", "3"],
+            expectedFavoriteEpisodes: [.dummy(id: "2"), .dummy(id: "3")]
+        ),
+        FetchDataFavoriteArguments(
+            localAllEpisodes: [.dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3")],
+            favoriteEpisodeIDs: ["2", "4"],
+            expectedFavoriteEpisodes: [.dummy(id: "2")]
+        )
+    ])
+    func fetchData_favEpisodes(arguments: FetchDataFavoriteArguments) async throws {
+        let mockDataSource = try DataSource.mock(with: arguments.localAllEpisodes)
+        let mockUserDefaultsManager = MockUserDefaultsManager(
+            favoriteEpisodeIDs: arguments.favoriteEpisodeIDs
+        )
+        let reducer = EpisodesView.ViewReducer(
+            htmlConvertable: MockHtmlConverter(),
+            dataProvideable: mockDataSource,
+            userDefaultsManagerable: mockUserDefaultsManager,
+            hasServerNewEpisodes: false
+        )
+        
+        let sut = ViewStore(
+            initialState: .default,
+            reducer: reducer.process
+        )
+        
+        await sut.send(.fetchData(isForce: false))
+        
+        let expectedViewState = ViewState(
+            isFetchingData: false,
+            allEpisodes: arguments.localAllEpisodes,
+            favoriteEpisodes: arguments.expectedFavoriteEpisodes,
+            fetchDataError: nil
+        )
+        #expect(sut.state == expectedViewState)
     }
     
     @Test(
@@ -219,6 +294,213 @@ struct EpisodesViewTests {
         #expect(sut.state.isFetchingData == arguments.isFetching)
         #expect(sut.state.allEpisodes == episodes)
     }
+    
+    @Test(arguments: [
+        AddFavorite(
+            initialEpisodes: [],
+            initialFavoriteEpisodes: [],
+            addEpisodeID: "1",
+            expectedFavoriteEpisodes: []
+        ),
+        AddFavorite(
+            initialEpisodes: [.dummy(id: "10"), .dummy(id: "20"), .dummy(id: "30")],
+            initialFavoriteEpisodes: [.dummy(id: "10")],
+            addEpisodeID: "10",
+            expectedFavoriteEpisodes: [.dummy(id: "10")]
+        ),
+        AddFavorite(
+            initialEpisodes: [.dummy(id: "10"), .dummy(id: "20"), .dummy(id: "30")],
+            initialFavoriteEpisodes: [.dummy(id: "10")],
+            addEpisodeID: "1",
+            expectedFavoriteEpisodes: []
+        ),
+        AddFavorite(
+            initialEpisodes: [.dummy(id: "10"), .dummy(id: "20"), .dummy(id: "30")],
+            initialFavoriteEpisodes: [],
+            addEpisodeID: "40",
+            expectedFavoriteEpisodes: []
+        ),
+        AddFavorite(
+            initialEpisodes: [.dummy(id: "10"), .dummy(id: "20"), .dummy(id: "30")],
+            initialFavoriteEpisodes: [],
+            addEpisodeID: "4",
+            expectedFavoriteEpisodes: []
+        ),
+        AddFavorite(
+            initialEpisodes: [
+                .dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3"),
+                .dummy(id: "10"), .dummy(id: "20"), .dummy(id: "30")
+            ],
+            initialFavoriteEpisodes: [.dummy(id: "10")],
+            addEpisodeID: "10",
+            expectedFavoriteEpisodes: [
+                .dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3"), .dummy(id: "10")
+            ]
+        ),
+        AddFavorite(
+            initialEpisodes: [
+                .dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3"),
+                .dummy(id: "10"), .dummy(id: "20"), .dummy(id: "30")
+            ],
+            initialFavoriteEpisodes: [.dummy(id: "10")],
+            addEpisodeID: "1",
+            expectedFavoriteEpisodes: [.dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3")]
+        ),
+        AddFavorite(
+            initialEpisodes: [
+                .dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3"),
+                .dummy(id: "10"), .dummy(id: "20"), .dummy(id: "30")
+            ],
+            initialFavoriteEpisodes: [],
+            addEpisodeID: "40",
+            expectedFavoriteEpisodes: [.dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3")]
+        ),
+        AddFavorite(
+            initialEpisodes: [
+                .dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3"),
+                .dummy(id: "10"), .dummy(id: "20"), .dummy(id: "30")
+            ],
+            initialFavoriteEpisodes: [],
+            addEpisodeID: "4",
+            expectedFavoriteEpisodes: [.dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3")]
+        ),
+    ])
+    func addFavorite(arguments: AddFavorite) async throws {
+        let mockHtmlConverter = MockHtmlConverter()
+        let mockDataSource = MockDataSource()
+        let mockUserDefaultsManager = MockUserDefaultsManager(favoriteEpisodeIDs: ["1", "2", "3"])
+        let reducer = EpisodesView.ViewReducer(
+            htmlConvertable: mockHtmlConverter,
+            dataProvideable: mockDataSource,
+            userDefaultsManagerable: mockUserDefaultsManager,
+            hasServerNewEpisodes: false
+        )
+
+        let state = ViewState(
+            isFetchingData: false,
+            allEpisodes: arguments.initialEpisodes,
+            favoriteEpisodes: arguments.initialFavoriteEpisodes,
+            fetchDataError: nil
+        )
+        let sut = ViewStore(
+            initialState: state,
+            reducer: reducer.process
+        )
+        
+        await sut.send(.addFavorite(episodeID: arguments.addEpisodeID))
+        
+        let expectedViewState = ViewState(
+            isFetchingData: false,
+            allEpisodes: arguments.initialEpisodes,
+            favoriteEpisodes: arguments.expectedFavoriteEpisodes,
+            fetchDataError: nil
+        )
+        #expect(sut.state == expectedViewState)
+    }
+    
+    @Test(arguments: [
+        RemoveFavorite(
+            initialEpisodes: [],
+            initialFavoriteEpisodes: [],
+            removeEpisodeID: "1",
+            expectedFavoriteEpisodes: []
+        ),
+        RemoveFavorite(
+            initialEpisodes: [.dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3")],
+            initialFavoriteEpisodes: [.dummy(id: "1")],
+            removeEpisodeID: "1",
+            expectedFavoriteEpisodes: [.dummy(id: "2"), .dummy(id: "3")]
+        ),
+        RemoveFavorite(
+            initialEpisodes: [.dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3")],
+            initialFavoriteEpisodes: [.dummy(id: "1")],
+            removeEpisodeID: "2",
+            expectedFavoriteEpisodes: [.dummy(id: "1"), .dummy(id: "3")]
+        ),
+        RemoveFavorite(
+            initialEpisodes: [.dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3")],
+            initialFavoriteEpisodes: [.dummy(id: "1")],
+            removeEpisodeID: "3",
+            expectedFavoriteEpisodes: [.dummy(id: "1"), .dummy(id: "2")]
+        ),
+        RemoveFavorite(
+            initialEpisodes: [
+                .dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3"),
+                .dummy(id: "10"), .dummy(id: "20"), .dummy(id: "30")
+            ],
+            initialFavoriteEpisodes: [.dummy(id: "1"), .dummy(id: "10")],
+            removeEpisodeID: "1",
+            expectedFavoriteEpisodes: [.dummy(id: "2"), .dummy(id: "3")]
+        ),
+        RemoveFavorite(
+            initialEpisodes: [
+                .dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3"),
+                .dummy(id: "10"), .dummy(id: "20"), .dummy(id: "30")
+            ],
+            initialFavoriteEpisodes: [.dummy(id: "1"), .dummy(id: "10")],
+            removeEpisodeID: "2",
+            expectedFavoriteEpisodes: [.dummy(id: "1"), .dummy(id: "3")]
+        ),
+        RemoveFavorite(
+            initialEpisodes: [
+                .dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3"),
+                .dummy(id: "10"), .dummy(id: "20"), .dummy(id: "30")
+            ],
+            initialFavoriteEpisodes: [.dummy(id: "1"), .dummy(id: "10")],
+            removeEpisodeID: "3",
+            expectedFavoriteEpisodes: [.dummy(id: "1"), .dummy(id: "2")]
+        ),
+        RemoveFavorite(
+            initialEpisodes: [
+                .dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3"),
+                .dummy(id: "10"), .dummy(id: "20"), .dummy(id: "30")
+            ],
+            initialFavoriteEpisodes: [.dummy(id: "1"), .dummy(id: "10")],
+            removeEpisodeID: "10",
+            expectedFavoriteEpisodes: [.dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3")]
+        ),
+        RemoveFavorite(
+            initialEpisodes: [
+                .dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3"),
+                .dummy(id: "10"), .dummy(id: "20"), .dummy(id: "30")
+            ],
+            initialFavoriteEpisodes: [.dummy(id: "1"), .dummy(id: "10")],
+            removeEpisodeID: "5",
+            expectedFavoriteEpisodes: [.dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3")]
+        ),
+    ])
+    func removeFavorite(arguments: RemoveFavorite) async throws {
+        let mockHtmlConverter = MockHtmlConverter()
+        let mockDataSource = MockDataSource()
+        let mockUserDefaultsManager = MockUserDefaultsManager(favoriteEpisodeIDs: ["1", "2", "3"])
+        let reducer = EpisodesView.ViewReducer(
+            htmlConvertable: mockHtmlConverter,
+            dataProvideable: mockDataSource,
+            userDefaultsManagerable: mockUserDefaultsManager,
+            hasServerNewEpisodes: false
+        )
+
+        let state = ViewState(
+            isFetchingData: false,
+            allEpisodes: arguments.initialEpisodes,
+            favoriteEpisodes: arguments.initialFavoriteEpisodes,
+            fetchDataError: nil
+        )
+        let sut = ViewStore(
+            initialState: state,
+            reducer: reducer.process
+        )
+        
+        await sut.send(.removeFavorite(episodeID: arguments.removeEpisodeID))
+        
+        let expectedViewState = ViewState(
+            isFetchingData: false,
+            allEpisodes: arguments.initialEpisodes,
+            favoriteEpisodes: arguments.expectedFavoriteEpisodes,
+            fetchDataError: nil
+        )
+        #expect(sut.state == expectedViewState)
+    }
 }
 
 extension EpisodesViewTests {
@@ -254,5 +536,11 @@ extension [Episode] {
     
     fileprivate static var serverEpisodes: [Episode] {
         [Episode].dummy(withAmount: 20)
+    }
+}
+
+extension Episode {
+    fileprivate static func dummy(id: String) -> Episode {
+        Episode(id: id, title: nil, desc: nil, date: nil, imageURLString: nil, urlString: nil)
     }
 }
