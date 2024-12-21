@@ -30,7 +30,7 @@ public final class Store<State: Sendable, Action: Sendable> {
         self.reducer = reducer
         
         #if DEBUG
-        self.startObservingState()
+//        self.startObservingState()
         #endif
     }
 

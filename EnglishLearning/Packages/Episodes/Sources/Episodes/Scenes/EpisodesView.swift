@@ -20,16 +20,31 @@ public struct EpisodesView: View {
     
     public var body: some View {
         NavigationStack {
-            List(store.state.allEpisodes) { episode in
-                ZStack {
-                    // Since `NavigationLink` automatically adds a `>` symbol for each item,
-                    // use `EpisodeView` as an overlay on top of the `NavigationLink`
-                    // instead of placing `EpisodeView` directly inside the `NavigationLink`.
-                    NavigationLink(value: episode) { EmptyView() }.opacity(0)
-                    EpisodeView(episode: episode)
+            VStack(spacing: 0) {
+                Picker(
+                    "",
+                    selection: Binding(
+                        get: { store.state.selectedListType },
+                        set: { newValue in
+                            Task { @MainActor in
+                                await store.send(.listTypeTapped(newValue))
+                            }
+                        }
+                    )
+                ) {
+                    ForEach(ListType.allCases, id: \.self) {
+                        Text($0.title)
+                    }
                 }
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
+                .pickerStyle(.segmented)
+                .padding()
+                
+                switch store.state.selectedListType {
+                case .all:
+                    makeList(episodes: store.state.allEpisodes)
+                case .favorite:
+                    makeList(episodes: store.state.favoriteEpisodes)
+                }
             }
             .refreshable {
                 await store.send(.fetchData(isForce: true))
@@ -38,9 +53,6 @@ public struct EpisodesView: View {
                 await store.send(.fetchData(isForce: false))
             }
             .listStyle(.plain)
-            // Add the smallest positive integer to avoid the content in the scrollView overlay with
-            // status bar when scrolling up
-            .padding(.top, 1)
             .navigationDestination(for: Episode.self) { episode in
                 EpisodeDetailView(
                     htmlConvertable: htmlConvertable,
@@ -89,6 +101,20 @@ public struct EpisodesView: View {
             hasServerNewEpisodes: serverNewEpisodesChecker.hasServerNewEpisodes(with: Date())
         )
         self.store = EpisodesStore(initialState: .default, reducer: reducer.process)
+    }
+    
+    private func makeList(episodes: [Episode]) -> some View {
+        List(episodes) { episode in
+            ZStack {
+                // Since `NavigationLink` automatically adds a `>` symbol for each item,
+                // use `EpisodeView` as an overlay on top of the `NavigationLink`
+                // instead of placing `EpisodeView` directly inside the `NavigationLink`.
+                NavigationLink(value: episode) { EmptyView() }.opacity(0)
+                EpisodeView(episode: episode)
+            }
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+        }
     }
 }
 
