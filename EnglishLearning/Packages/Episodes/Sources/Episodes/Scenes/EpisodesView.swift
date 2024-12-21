@@ -38,12 +38,26 @@ public struct EpisodesView: View {
                 }
                 .pickerStyle(.segmented)
                 .padding()
-                
-                switch store.state.selectedListType {
-                case .all:
-                    makeList(episodes: store.state.allEpisodes)
-                case .favorite:
-                    makeList(episodes: store.state.favoriteEpisodes)
+
+                GeometryReader { geometry in
+                    ScrollView(.horizontal) {
+                        ScrollViewReader { proxy in
+                            HStack {
+                                makeList(episodes: store.state.allEpisodes)
+                                    .frame(width: geometry.size.width, height: geometry.size.height)
+                                    .id(ListType.all)
+                                
+                                makeList(episodes: store.state.favoriteEpisodes)
+                                    .frame(width: geometry.size.width, height: geometry.size.height)
+                                    .id(ListType.favorite)
+                            }
+                            .onChange(of: store.state.selectedListType) { _, newValue in
+                                withAnimation {
+                                    proxy.scrollTo(newValue)
+                                }
+                            }
+                        }
+                    }
                 }
             }
             .refreshable {
