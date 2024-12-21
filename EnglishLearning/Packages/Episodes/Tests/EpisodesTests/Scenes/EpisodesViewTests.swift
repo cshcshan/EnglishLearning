@@ -28,6 +28,7 @@ struct EpisodesViewTests {
     struct FetchDataFavoriteArguments {
         let localAllEpisodes: [Episode]
         let favoriteEpisodeIDs: Set<String>
+        let expectedAllEpisodes: [Episode]
         let expectedFavoriteEpisodes: [Episode]
     }
 
@@ -48,6 +49,7 @@ struct EpisodesViewTests {
         let initialEpisodes: [Episode]
         let initialFavoriteEpisodes: [Episode]
         let addEpisodeID: String
+        let expectedAllEpisodes: [Episode]
         let expectedFavoriteEpisodes: [Episode]
     }
     
@@ -55,6 +57,7 @@ struct EpisodesViewTests {
         let initialEpisodes: [Episode]
         let initialFavoriteEpisodes: [Episode]
         let removeEpisodeID: String
+        let expectedAllEpisodes: [Episode]
         let expectedFavoriteEpisodes: [Episode]
     }
     
@@ -147,27 +150,38 @@ struct EpisodesViewTests {
         FetchDataFavoriteArguments(
             localAllEpisodes: [],
             favoriteEpisodeIDs: [],
+            expectedAllEpisodes: [],
             expectedFavoriteEpisodes: []
         ),
         FetchDataFavoriteArguments(
             localAllEpisodes: [.dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3")],
             favoriteEpisodeIDs: ["2"],
-            expectedFavoriteEpisodes: [.dummy(id: "2")]
+            expectedAllEpisodes: [
+                .dummy(id: "1"), .dummyFav(id: "2"), .dummy(id: "3")
+            ],
+            expectedFavoriteEpisodes: [.dummyFav(id: "2")]
         ),
         FetchDataFavoriteArguments(
             localAllEpisodes: [],
             favoriteEpisodeIDs: ["10"],
+            expectedAllEpisodes: [],
             expectedFavoriteEpisodes: []
         ),
         FetchDataFavoriteArguments(
             localAllEpisodes: [.dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3")],
             favoriteEpisodeIDs: ["2", "3"],
-            expectedFavoriteEpisodes: [.dummy(id: "2"), .dummy(id: "3")]
+            expectedAllEpisodes: [
+                .dummy(id: "1"), .dummyFav(id: "2"), .dummyFav(id: "3")
+            ],
+            expectedFavoriteEpisodes: [.dummyFav(id: "2"), .dummyFav(id: "3")]
         ),
         FetchDataFavoriteArguments(
             localAllEpisodes: [.dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3")],
             favoriteEpisodeIDs: ["2", "4"],
-            expectedFavoriteEpisodes: [.dummy(id: "2")]
+            expectedAllEpisodes: [
+                .dummy(id: "1"), .dummyFav(id: "2"), .dummy(id: "3")
+            ],
+            expectedFavoriteEpisodes: [.dummyFav(id: "2")]
         )
     ])
     func fetchData_favEpisodes(arguments: FetchDataFavoriteArguments) async throws {
@@ -191,7 +205,7 @@ struct EpisodesViewTests {
         
         let expectedViewState = ViewState(
             isFetchingData: false,
-            allEpisodes: arguments.localAllEpisodes,
+            allEpisodes: arguments.expectedAllEpisodes,
             favoriteEpisodes: arguments.expectedFavoriteEpisodes,
             selectedListType: .all,
             fetchDataError: nil
@@ -302,30 +316,35 @@ struct EpisodesViewTests {
             initialEpisodes: [],
             initialFavoriteEpisodes: [],
             addEpisodeID: "1",
+            expectedAllEpisodes: [],
             expectedFavoriteEpisodes: []
         ),
         AddFavorite(
             initialEpisodes: [.dummy(id: "10"), .dummy(id: "20"), .dummy(id: "30")],
             initialFavoriteEpisodes: [.dummy(id: "10")],
             addEpisodeID: "10",
-            expectedFavoriteEpisodes: [.dummy(id: "10")]
+            expectedAllEpisodes: [.dummyFav(id: "10"), .dummy(id: "20"), .dummy(id: "30")],
+            expectedFavoriteEpisodes: [.dummyFav(id: "10")]
         ),
         AddFavorite(
             initialEpisodes: [.dummy(id: "10"), .dummy(id: "20"), .dummy(id: "30")],
             initialFavoriteEpisodes: [.dummy(id: "10")],
             addEpisodeID: "1",
+            expectedAllEpisodes: [.dummy(id: "10"), .dummy(id: "20"), .dummy(id: "30")],
             expectedFavoriteEpisodes: []
         ),
         AddFavorite(
             initialEpisodes: [.dummy(id: "10"), .dummy(id: "20"), .dummy(id: "30")],
             initialFavoriteEpisodes: [],
             addEpisodeID: "40",
+            expectedAllEpisodes: [.dummy(id: "10"), .dummy(id: "20"), .dummy(id: "30")],
             expectedFavoriteEpisodes: []
         ),
         AddFavorite(
             initialEpisodes: [.dummy(id: "10"), .dummy(id: "20"), .dummy(id: "30")],
             initialFavoriteEpisodes: [],
             addEpisodeID: "4",
+            expectedAllEpisodes: [.dummy(id: "10"), .dummy(id: "20"), .dummy(id: "30")],
             expectedFavoriteEpisodes: []
         ),
         AddFavorite(
@@ -335,8 +354,12 @@ struct EpisodesViewTests {
             ],
             initialFavoriteEpisodes: [.dummy(id: "10")],
             addEpisodeID: "10",
+            expectedAllEpisodes: [
+                .dummyFav(id: "1"), .dummyFav(id: "2"), .dummyFav(id: "3"),
+                .dummyFav(id: "10"), .dummy(id: "20"), .dummy(id: "30")
+            ],
             expectedFavoriteEpisodes: [
-                .dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3"), .dummy(id: "10")
+                .dummyFav(id: "1"), .dummyFav(id: "2"), .dummyFav(id: "3"), .dummyFav(id: "10")
             ]
         ),
         AddFavorite(
@@ -346,7 +369,11 @@ struct EpisodesViewTests {
             ],
             initialFavoriteEpisodes: [.dummy(id: "10")],
             addEpisodeID: "1",
-            expectedFavoriteEpisodes: [.dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3")]
+            expectedAllEpisodes: [
+                .dummyFav(id: "1"), .dummyFav(id: "2"), .dummyFav(id: "3"),
+                .dummy(id: "10"), .dummy(id: "20"), .dummy(id: "30")
+            ],
+            expectedFavoriteEpisodes: [.dummyFav(id: "1"), .dummyFav(id: "2"), .dummyFav(id: "3")]
         ),
         AddFavorite(
             initialEpisodes: [
@@ -355,7 +382,11 @@ struct EpisodesViewTests {
             ],
             initialFavoriteEpisodes: [],
             addEpisodeID: "40",
-            expectedFavoriteEpisodes: [.dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3")]
+            expectedAllEpisodes: [
+                .dummyFav(id: "1"), .dummyFav(id: "2"), .dummyFav(id: "3"),
+                .dummy(id: "10"), .dummy(id: "20"), .dummy(id: "30")
+            ],
+            expectedFavoriteEpisodes: [.dummyFav(id: "1"), .dummyFav(id: "2"), .dummyFav(id: "3")]
         ),
         AddFavorite(
             initialEpisodes: [
@@ -364,7 +395,11 @@ struct EpisodesViewTests {
             ],
             initialFavoriteEpisodes: [],
             addEpisodeID: "4",
-            expectedFavoriteEpisodes: [.dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3")]
+            expectedAllEpisodes: [
+                .dummyFav(id: "1"), .dummyFav(id: "2"), .dummyFav(id: "3"),
+                .dummy(id: "10"), .dummy(id: "20"), .dummy(id: "30")
+            ],
+            expectedFavoriteEpisodes: [.dummyFav(id: "1"), .dummyFav(id: "2"), .dummyFav(id: "3")]
         ),
     ])
     func addFavorite(arguments: AddFavorite) async throws {
@@ -394,7 +429,7 @@ struct EpisodesViewTests {
         
         let expectedViewState = ViewState(
             isFetchingData: false,
-            allEpisodes: arguments.initialEpisodes,
+            allEpisodes: arguments.expectedAllEpisodes,
             favoriteEpisodes: arguments.expectedFavoriteEpisodes,
             selectedListType: .all,
             fetchDataError: nil
@@ -407,25 +442,29 @@ struct EpisodesViewTests {
             initialEpisodes: [],
             initialFavoriteEpisodes: [],
             removeEpisodeID: "1",
+            expectedAllEpisodes: [],
             expectedFavoriteEpisodes: []
         ),
         RemoveFavorite(
             initialEpisodes: [.dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3")],
             initialFavoriteEpisodes: [.dummy(id: "1")],
             removeEpisodeID: "1",
-            expectedFavoriteEpisodes: [.dummy(id: "2"), .dummy(id: "3")]
+            expectedAllEpisodes: [.dummy(id: "1"), .dummyFav(id: "2"), .dummyFav(id: "3")],
+            expectedFavoriteEpisodes: [.dummyFav(id: "2"), .dummyFav(id: "3")]
         ),
         RemoveFavorite(
             initialEpisodes: [.dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3")],
             initialFavoriteEpisodes: [.dummy(id: "1")],
             removeEpisodeID: "2",
-            expectedFavoriteEpisodes: [.dummy(id: "1"), .dummy(id: "3")]
+            expectedAllEpisodes: [.dummyFav(id: "1"), .dummy(id: "2"), .dummyFav(id: "3")],
+            expectedFavoriteEpisodes: [.dummyFav(id: "1"), .dummyFav(id: "3")]
         ),
         RemoveFavorite(
             initialEpisodes: [.dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3")],
             initialFavoriteEpisodes: [.dummy(id: "1")],
             removeEpisodeID: "3",
-            expectedFavoriteEpisodes: [.dummy(id: "1"), .dummy(id: "2")]
+            expectedAllEpisodes: [.dummyFav(id: "1"), .dummyFav(id: "2"), .dummy(id: "3")],
+            expectedFavoriteEpisodes: [.dummyFav(id: "1"), .dummyFav(id: "2")]
         ),
         RemoveFavorite(
             initialEpisodes: [
@@ -434,7 +473,11 @@ struct EpisodesViewTests {
             ],
             initialFavoriteEpisodes: [.dummy(id: "1"), .dummy(id: "10")],
             removeEpisodeID: "1",
-            expectedFavoriteEpisodes: [.dummy(id: "2"), .dummy(id: "3")]
+            expectedAllEpisodes: [
+                .dummy(id: "1"), .dummyFav(id: "2"), .dummyFav(id: "3"),
+                .dummy(id: "10"), .dummy(id: "20"), .dummy(id: "30")
+            ],
+            expectedFavoriteEpisodes: [.dummyFav(id: "2"), .dummyFav(id: "3")]
         ),
         RemoveFavorite(
             initialEpisodes: [
@@ -443,7 +486,11 @@ struct EpisodesViewTests {
             ],
             initialFavoriteEpisodes: [.dummy(id: "1"), .dummy(id: "10")],
             removeEpisodeID: "2",
-            expectedFavoriteEpisodes: [.dummy(id: "1"), .dummy(id: "3")]
+            expectedAllEpisodes: [
+                .dummyFav(id: "1"), .dummy(id: "2"), .dummyFav(id: "3"),
+                .dummy(id: "10"), .dummy(id: "20"), .dummy(id: "30")
+            ],
+            expectedFavoriteEpisodes: [.dummyFav(id: "1"), .dummyFav(id: "3")]
         ),
         RemoveFavorite(
             initialEpisodes: [
@@ -452,7 +499,11 @@ struct EpisodesViewTests {
             ],
             initialFavoriteEpisodes: [.dummy(id: "1"), .dummy(id: "10")],
             removeEpisodeID: "3",
-            expectedFavoriteEpisodes: [.dummy(id: "1"), .dummy(id: "2")]
+            expectedAllEpisodes: [
+                .dummyFav(id: "1"), .dummyFav(id: "2"), .dummy(id: "3"),
+                .dummy(id: "10"), .dummy(id: "20"), .dummy(id: "30")
+            ],
+            expectedFavoriteEpisodes: [.dummyFav(id: "1"), .dummyFav(id: "2")]
         ),
         RemoveFavorite(
             initialEpisodes: [
@@ -461,7 +512,11 @@ struct EpisodesViewTests {
             ],
             initialFavoriteEpisodes: [.dummy(id: "1"), .dummy(id: "10")],
             removeEpisodeID: "10",
-            expectedFavoriteEpisodes: [.dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3")]
+            expectedAllEpisodes: [
+                .dummyFav(id: "1"), .dummyFav(id: "2"), .dummyFav(id: "3"),
+                .dummy(id: "10"), .dummy(id: "20"), .dummy(id: "30")
+            ],
+            expectedFavoriteEpisodes: [.dummyFav(id: "1"), .dummyFav(id: "2"), .dummyFav(id: "3")]
         ),
         RemoveFavorite(
             initialEpisodes: [
@@ -470,7 +525,11 @@ struct EpisodesViewTests {
             ],
             initialFavoriteEpisodes: [.dummy(id: "1"), .dummy(id: "10")],
             removeEpisodeID: "5",
-            expectedFavoriteEpisodes: [.dummy(id: "1"), .dummy(id: "2"), .dummy(id: "3")]
+            expectedAllEpisodes: [
+                .dummyFav(id: "1"), .dummyFav(id: "2"), .dummyFav(id: "3"),
+                .dummy(id: "10"), .dummy(id: "20"), .dummy(id: "30")
+            ],
+            expectedFavoriteEpisodes: [.dummyFav(id: "1"), .dummyFav(id: "2"), .dummyFav(id: "3")]
         ),
     ])
     func removeFavorite(arguments: RemoveFavorite) async throws {
@@ -500,7 +559,7 @@ struct EpisodesViewTests {
         
         let expectedViewState = ViewState(
             isFetchingData: false,
-            allEpisodes: arguments.initialEpisodes,
+            allEpisodes: arguments.expectedAllEpisodes,
             favoriteEpisodes: arguments.expectedFavoriteEpisodes,
             selectedListType: .all,
             fetchDataError: nil
@@ -548,5 +607,13 @@ extension [Episode] {
 extension Episode {
     fileprivate static func dummy(id: String) -> Episode {
         Episode(id: id, title: nil, desc: nil, date: nil, imageURLString: nil, urlString: nil)
+    }
+    
+    fileprivate static func dummyFav(id: String) -> Episode {
+        let episode = Episode(
+            id: id, title: nil, desc: nil, date: nil, imageURLString: nil, urlString: nil
+        )
+        episode.isFavorite = true
+        return episode
     }
 }

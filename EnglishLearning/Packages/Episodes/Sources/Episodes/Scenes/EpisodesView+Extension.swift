@@ -84,6 +84,11 @@ extension EpisodesView {
     
     @MainActor
     final class ViewReducer {
+        struct OrganizedEpisodes {
+            let all: [Episode]
+            let favorite: [Episode]
+        }
+        
         lazy var process: EpisodesStore.Reducer = { [weak self] state, action in
             AsyncStream { continuation in
                 Task {
@@ -113,10 +118,12 @@ extension EpisodesView {
                                 ? try await self.fetchDataFromServer(serverFetching: serverFetching)
                                 : try await self.fetchDataFromDB(serverFetching: serverFetching)
                             
+                            let organizedEpisodes = self.organizeEpisodes(allEpisodes: episodes)
+                            
                             newState = ViewState(
                                 isFetchingData: false,
-                                allEpisodes: episodes,
-                                favoriteEpisodes: self.favoriteEpisodes(with: episodes),
+                                allEpisodes: organizedEpisodes.all,
+                                favoriteEpisodes: organizedEpisodes.favorite,
                                 selectedListType: state.selectedListType,
                                 fetchDataError: nil
                             )
@@ -131,15 +138,19 @@ extension EpisodesView {
                         newState = .build(with: state, fetchDataError: nil)
                     case let .addFavorite(episodeID):
                         self.userDefaultsManagerable.favoriteEpisodeIDs.insert(episodeID)
+                        let organizedEpisodes = self.organizeEpisodes(allEpisodes: state.allEpisodes)
                         newState = .build(
                             with: state,
-                            favoriteEpisodes: self.favoriteEpisodes(with: state.allEpisodes)
+                            allEpisodes: organizedEpisodes.all,
+                            favoriteEpisodes: organizedEpisodes.favorite
                         )
                     case let .removeFavorite(episodeID):
                         self.userDefaultsManagerable.favoriteEpisodeIDs.remove(episodeID)
+                        let organizedEpisodes = self.organizeEpisodes(allEpisodes: state.allEpisodes)
                         newState = .build(
                             with: state,
-                            favoriteEpisodes: self.favoriteEpisodes(with: state.allEpisodes)
+                            allEpisodes: organizedEpisodes.all,
+                            favoriteEpisodes: organizedEpisodes.favorite
                         )
                     }
                     
@@ -195,10 +206,26 @@ extension EpisodesView {
             }
         }
         
-        private func favoriteEpisodes(with allEpisodes: [Episode]) -> [Episode] {
-            userDefaultsManagerable.favoriteEpisodeIDs.flatMap { id in
-                allEpisodes.filter { $0.id == id }
+        private func organizeEpisodes(allEpisodes: [Episode]) -> OrganizedEpisodes {
+            let favoriteEpisodeIDs = userDefaultsManagerable.favoriteEpisodeIDs
+            var newAllEpisodes: [Episode] = []
+            var newFavoriteEpisodes: [Episode] = []
+            
+            allEpisodes.forEach { episode in
+                let newEpisode = episode
+                if let id = episode.id {
+                    newEpisode.isFavorite = favoriteEpisodeIDs.contains(id)
+                } else {
+                    newEpisode.isFavorite = false
+                }
+                newAllEpisodes.append(newEpisode)
+                
+                if newEpisode.isFavorite {
+                    newFavoriteEpisodes.append(newEpisode)
+                }
             }
+            
+            return OrganizedEpisodes(all: newAllEpisodes, favorite: newFavoriteEpisodes)
         }
     }
     

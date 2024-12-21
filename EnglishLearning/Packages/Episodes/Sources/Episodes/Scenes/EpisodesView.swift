@@ -110,7 +110,19 @@ public struct EpisodesView: View {
                 // use `EpisodeView` as an overlay on top of the `NavigationLink`
                 // instead of placing `EpisodeView` directly inside the `NavigationLink`.
                 NavigationLink(value: episode) { EmptyView() }.opacity(0)
-                EpisodeView(episode: episode)
+                EpisodeView(
+                    episode: episode,
+                    heartTapped: {
+                        guard let id = episode.id else { return }
+                        Task {
+                            if episode.isFavorite {
+                                await self.store.send(.removeFavorite(episodeID: id))
+                            } else {
+                                await self.store.send(.addFavorite(episodeID: id))
+                            }
+                        }
+                    }
+                )
             }
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
