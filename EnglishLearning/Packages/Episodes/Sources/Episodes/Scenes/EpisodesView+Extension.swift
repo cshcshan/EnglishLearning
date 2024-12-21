@@ -11,10 +11,22 @@ import SwiftData
 import SwiftUI
 
 extension EpisodesView {
+    enum ListType: CaseIterable {
+        case all, favorite
+        
+        var title: String {
+            switch self {
+            case .all: "All"
+            case .favorite: "Favorite"
+            }
+        }
+    }
+    
     struct ViewState {
         let isFetchingData: Bool
         let allEpisodes: [Episode]
         let favoriteEpisodes: [Episode]
+        let selectedListType: ListType
         let fetchDataError: Error?
 
         static var `default`: ViewState {
@@ -22,6 +34,7 @@ extension EpisodesView {
                 isFetchingData: false,
                 allEpisodes: [],
                 favoriteEpisodes: [],
+                selectedListType: .all,
                 fetchDataError: nil
             )
         }
@@ -30,13 +43,15 @@ extension EpisodesView {
             with state: ViewState,
             isFetchingData: Bool? = nil,
             allEpisodes: [Episode]? = nil,
-            favoriteEpisodes: [Episode]? = nil
+            favoriteEpisodes: [Episode]? = nil,
+            selectedListType: ListType? = nil
         ) -> ViewState {
             build(
                 with: state,
                 isFetchingData: isFetchingData,
                 allEpisodes: allEpisodes,
                 favoriteEpisodes: favoriteEpisodes,
+                selectedListType: selectedListType,
                 fetchDataError: state.fetchDataError
             )
         }
@@ -46,18 +61,21 @@ extension EpisodesView {
             isFetchingData: Bool? = nil,
             allEpisodes: [Episode]? = nil,
             favoriteEpisodes: [Episode]? = nil,
+            selectedListType: ListType? = nil,
             fetchDataError: Error?
         ) -> ViewState {
             ViewState(
                 isFetchingData: isFetchingData ?? state.isFetchingData,
                 allEpisodes: allEpisodes ?? state.allEpisodes,
                 favoriteEpisodes: favoriteEpisodes ?? state.favoriteEpisodes,
+                selectedListType: selectedListType ?? state.selectedListType,
                 fetchDataError: fetchDataError
             )
         }
     }
     
     enum ViewAction {
+        case listTypeTapped(ListType)
         case fetchData(isForce: Bool)
         case confirmErrorAlert
         case addFavorite(episodeID: String)
@@ -81,6 +99,8 @@ extension EpisodesView {
                     let newState: ViewState
                     
                     switch action {
+                    case let .listTypeTapped(listType):
+                        newState = .build(with: state, selectedListType: listType)
                     case .fetchData where state.isFetchingData:
                         newState = state
                     case let .fetchData(isForce):
@@ -97,6 +117,7 @@ extension EpisodesView {
                                 isFetchingData: false,
                                 allEpisodes: episodes,
                                 favoriteEpisodes: self.favoriteEpisodes(with: episodes),
+                                selectedListType: state.selectedListType,
                                 fetchDataError: nil
                             )
                         } catch {

@@ -193,6 +193,7 @@ struct EpisodesViewTests {
             isFetchingData: false,
             allEpisodes: arguments.localAllEpisodes,
             favoriteEpisodes: arguments.expectedFavoriteEpisodes,
+            selectedListType: .all,
             fetchDataError: nil
         )
         #expect(sut.state == expectedViewState)
@@ -278,6 +279,7 @@ struct EpisodesViewTests {
                 isFetchingData: arguments.isFetching,
                 allEpisodes: episodes,
                 favoriteEpisodes: [],
+                selectedListType: .all,
                 fetchDataError: DummyError.fetchServerDataError
             ),
             reducer: reducer.process
@@ -380,6 +382,7 @@ struct EpisodesViewTests {
             isFetchingData: false,
             allEpisodes: arguments.initialEpisodes,
             favoriteEpisodes: arguments.initialFavoriteEpisodes,
+            selectedListType: .all,
             fetchDataError: nil
         )
         let sut = ViewStore(
@@ -393,6 +396,7 @@ struct EpisodesViewTests {
             isFetchingData: false,
             allEpisodes: arguments.initialEpisodes,
             favoriteEpisodes: arguments.expectedFavoriteEpisodes,
+            selectedListType: .all,
             fetchDataError: nil
         )
         #expect(sut.state == expectedViewState)
@@ -484,6 +488,7 @@ struct EpisodesViewTests {
             isFetchingData: false,
             allEpisodes: arguments.initialEpisodes,
             favoriteEpisodes: arguments.initialFavoriteEpisodes,
+            selectedListType: .all,
             fetchDataError: nil
         )
         let sut = ViewStore(
@@ -497,6 +502,7 @@ struct EpisodesViewTests {
             isFetchingData: false,
             allEpisodes: arguments.initialEpisodes,
             favoriteEpisodes: arguments.expectedFavoriteEpisodes,
+            selectedListType: .all,
             fetchDataError: nil
         )
         #expect(sut.state == expectedViewState)
