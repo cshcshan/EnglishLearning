@@ -118,6 +118,10 @@ extension EpisodeDetailView {
         private let episodeID: String?
         private let episodePath: String?
         
+        deinit {
+            print("deinit \(URL(string: #filePath)!.lastPathComponent)")
+        }
+        
         init(
             htmlConvertable: HtmlConvertable,
             dataSource: DataSource,
