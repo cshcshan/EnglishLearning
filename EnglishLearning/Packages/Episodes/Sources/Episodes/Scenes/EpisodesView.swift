@@ -5,6 +5,7 @@
 //  Created by Han Chen on 2024/11/27.
 //
 
+import AudioPlayer
 import Core
 import SwiftUI
 
@@ -12,6 +13,8 @@ public struct EpisodesView: View {
     typealias EpisodesStore = Store<ViewState, ViewAction>
 
     @State private(set) var store: EpisodesStore
+    @State private var playPanelOffsetY: CGFloat = 200
+    
     private let htmlConvertable: HtmlConvertable
     private let dataSource: DataSource
     // Store `reducer` as a property of `EpisodesView` to prevent `[weak self]` from being null in
@@ -29,12 +32,52 @@ public struct EpisodesView: View {
             .task { await store.send(.fetchData(isForce: false)) }
             .listStyle(.plain)
             .navigationDestination(for: Episode.self) { makeDetailView(episode: $0) }
-            .errorAlert(
-                isPresented: .constant(store.state.fetchDataError != nil),
-                error: store.state.fetchDataError,
-                actions: { _ in makeErrorAlertActions() },
-                message: { Text($0.recoverySuggestion ?? "") }
-            )
+        }
+        .overlay(alignment: .bottom) {
+            if store.state.needsShowPlayPanel {
+                makePlayPanelView()
+                    // Add `zIndex` for transition animation
+                    .zIndex(0)
+                    .offset(y: playPanelOffsetY)
+                    .onAppear { playPanelOffsetY = .zero }
+                    .gesture(
+                        DragGesture()
+                            .onChanged { gesture in
+                                guard gesture.translation.height > 0 else { return }
+                                playPanelOffsetY = gesture.translation.height
+                            }
+                            .onEnded { gesture in
+                                if playPanelOffsetY > 100 {
+                                    Task { await store.send(.hidePlayPanelView) }
+                                } else {
+                                    playPanelOffsetY = .zero
+                                }
+                            }
+                    )
+                    .animation(.easeInOut, value: playPanelOffsetY)
+                    .transition(.move(edge: .bottom))
+            }
+        }
+        .errorAlert(
+            isPresented: .constant(store.state.fetchDataError != nil),
+            error: store.state.fetchDataError,
+            actions: { _ in makeErrorAlertActions() },
+            message: { Text($0.recoverySuggestion ?? "") }
+        )
+        .task {
+            NotificationCenter.default.addObserver(
+                forName: .episodeDetailLoaded,
+                object: nil,
+                queue: .main
+            ) { notification in
+                guard let userInfo = notification.userInfo,
+                      let episodeDetail = userInfo["info"] as? EpisodeDetail
+                else { return }
+                
+                Task {
+                    await store.send(.episodeDetailLoaded(episodeDetail))
+                }
+            }
         }
     }
     
@@ -153,6 +196,17 @@ public struct EpisodesView: View {
                 label: { Text("Retry") }
             )
         }
+    }
+    
+    private func makePlayPanelView() -> some View {
+        PlayPanelView(audioURL: .constant(store.state.audioURL))
+            .padding(20)
+            .background {
+                Color.white
+                    .shadow(radius: 8)
+                    .mask(Rectangle().padding(.top, -20))
+                    .ignoresSafeArea()
+            }
     }
 }
 

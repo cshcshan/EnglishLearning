@@ -96,6 +96,12 @@ extension EpisodeDetailView {
                                 attributedString = nil
                             }
                             
+                            NotificationCenter.default.post(
+                                name: .episodeDetailLoaded,
+                                object: nil,
+                                userInfo: ["info": episodeDetail]
+                            )
+                            
                             newState = .build(
                                 with: state,
                                 scriptAttributedString: attributedString,

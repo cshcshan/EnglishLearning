@@ -61,6 +61,12 @@ struct EpisodesViewTests {
         let expectedFavoriteEpisodes: [Episode]
     }
     
+    struct EpisodeDetailLoaded {
+        let episodeDetail: EpisodeDetail
+        let expectedNeedsPlayPanel: Bool
+        let expectedAudioURL: URL?
+    }
+    
     @Test(
         arguments: [
             Arguments(
@@ -208,6 +214,8 @@ struct EpisodesViewTests {
             allEpisodes: arguments.expectedAllEpisodes,
             favoriteEpisodes: arguments.expectedFavoriteEpisodes,
             selectedListType: .all,
+            needsShowPlayPanel: false,
+            audioURL: nil,
             fetchDataError: nil
         )
         #expect(sut.state == expectedViewState)
@@ -294,6 +302,8 @@ struct EpisodesViewTests {
                 allEpisodes: episodes,
                 favoriteEpisodes: [],
                 selectedListType: .all,
+                needsShowPlayPanel: false,
+                audioURL: nil,
                 fetchDataError: DummyError.fetchServerDataError
             ),
             reducer: reducer.process
@@ -418,6 +428,8 @@ struct EpisodesViewTests {
             allEpisodes: arguments.initialEpisodes,
             favoriteEpisodes: arguments.initialFavoriteEpisodes,
             selectedListType: .all,
+            needsShowPlayPanel: false,
+            audioURL: nil,
             fetchDataError: nil
         )
         let sut = ViewStore(
@@ -432,6 +444,8 @@ struct EpisodesViewTests {
             allEpisodes: arguments.expectedAllEpisodes,
             favoriteEpisodes: arguments.expectedFavoriteEpisodes,
             selectedListType: .all,
+            needsShowPlayPanel: false,
+            audioURL: nil,
             fetchDataError: nil
         )
         #expect(sut.state == expectedViewState)
@@ -548,6 +562,8 @@ struct EpisodesViewTests {
             allEpisodes: arguments.initialEpisodes,
             favoriteEpisodes: arguments.initialFavoriteEpisodes,
             selectedListType: .all,
+            needsShowPlayPanel: false,
+            audioURL: nil,
             fetchDataError: nil
         )
         let sut = ViewStore(
@@ -562,9 +578,80 @@ struct EpisodesViewTests {
             allEpisodes: arguments.expectedAllEpisodes,
             favoriteEpisodes: arguments.expectedFavoriteEpisodes,
             selectedListType: .all,
+            needsShowPlayPanel: false,
+            audioURL: nil,
             fetchDataError: nil
         )
         #expect(sut.state == expectedViewState)
+    }
+    
+    @Test(
+        arguments: [
+            EpisodeDetailLoaded(
+                episodeDetail: EpisodeDetail(
+                    id: "1",
+                    audioLink: "https://downloads.bbc.co.uk/learningenglish/features/6min/241114_6_minute_english_the_bond_between_sisters_download.mp3"
+                ),
+                expectedNeedsPlayPanel: true,
+                expectedAudioURL: URL(
+                    string: "https://downloads.bbc.co.uk/learningenglish/features/6min/241114_6_minute_english_the_bond_between_sisters_download.mp3"
+                )
+            ),
+            EpisodeDetailLoaded(
+                episodeDetail: EpisodeDetail(id: "", audioLink: ""),
+                expectedNeedsPlayPanel: false,
+                expectedAudioURL: nil
+            )
+        ]
+    )
+    func episodeDetailLoaded(arguments: EpisodeDetailLoaded) async throws {
+        let reducer = EpisodesView.ViewReducer(
+            htmlConvertable: MockHtmlConverter(),
+            dataProvideable: MockDataSource(),
+            userDefaultsManagerable: MockUserDefaultsManager(),
+            hasServerNewEpisodes: false
+        )
+        let state = ViewState(
+            isFetchingData: false,
+            allEpisodes: [],
+            favoriteEpisodes: [],
+            selectedListType: .all,
+            needsShowPlayPanel: false,
+            audioURL: nil,
+            fetchDataError: nil
+        )
+        let sut = ViewStore(initialState: state, reducer: reducer.process)
+        
+        await sut.send(.episodeDetailLoaded(arguments.episodeDetail))
+        
+        #expect(sut.state.needsShowPlayPanel == arguments.expectedNeedsPlayPanel)
+        #expect(sut.state.audioURL == arguments.expectedAudioURL)
+    }
+    
+    @Test func hidePlayPanelView() async throws {
+        let reducer = EpisodesView.ViewReducer(
+            htmlConvertable: MockHtmlConverter(),
+            dataProvideable: MockDataSource(),
+            userDefaultsManagerable: MockUserDefaultsManager(),
+            hasServerNewEpisodes: false
+        )
+        let state = ViewState(
+            isFetchingData: false,
+            allEpisodes: [],
+            favoriteEpisodes: [],
+            selectedListType: .all,
+            needsShowPlayPanel: true,
+            audioURL: URL(
+                string: "https://downloads.bbc.co.uk/learningenglish/features/6min/241114_6_minute_english_the_bond_between_sisters_download.mp3"
+            ),
+            fetchDataError: nil
+        )
+        let sut = ViewStore(initialState: state, reducer: reducer.process)
+        
+        await sut.send(.hidePlayPanelView)
+        
+        #expect(sut.state.needsShowPlayPanel == false)
+        #expect(sut.state.audioURL == nil)
     }
 }
 

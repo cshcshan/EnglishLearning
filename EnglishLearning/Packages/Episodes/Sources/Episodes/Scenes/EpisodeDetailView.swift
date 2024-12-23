@@ -16,26 +16,15 @@ struct EpisodeDetailView: View {
     private let reducer: ViewReducer
 
     var body: some View {
-        VStack(spacing: 0) {
-            ScrollView {
-                VStack {
-                    EpisodeImageView(imageURL: store.state.imageURL)
-                    
-                    if let attributedString = store.state.scriptAttributedString {
-                        Text(attributedString)
-                            .padding(10)
-                    }
+        ScrollView {
+            VStack {
+                EpisodeImageView(imageURL: store.state.imageURL)
+                
+                if let attributedString = store.state.scriptAttributedString {
+                    Text(attributedString)
+                        .padding(10)
                 }
             }
-            
-            PlayPanelView(audioURL: .constant(store.state.audioURL))
-                .padding(20)
-                .background {
-                    Color.white
-                        .shadow(radius: 8)
-                        .mask(Rectangle().padding(.top, -20))
-                        .ignoresSafeArea()
-                }
         }
         .navigationTitle(store.state.title ?? "")
         .errorAlert(
