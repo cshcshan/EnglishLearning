@@ -21,6 +21,10 @@ public final class Store<State: Sendable, Action: Sendable> {
 
     public private(set) var state: State
     private let reducer: Reducer
+    
+    deinit {
+        print("deinit \(URL(string: #filePath)!.lastPathComponent)")
+    }
 
     public init(
         initialState state: State,

@@ -168,6 +168,10 @@ extension EpisodesView {
         private var userDefaultsManagerable: UserDefaultsManagerable
         private let hasServerNewEpisodes: Bool
         
+        deinit {
+            print("deinit \(URL(string: #filePath)!.lastPathComponent)")
+        }
+        
         init(
             htmlConvertable: HtmlConvertable,
             dataProvideable: any DataProvideable,

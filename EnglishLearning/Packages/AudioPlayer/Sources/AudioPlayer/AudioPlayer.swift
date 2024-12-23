@@ -86,6 +86,8 @@ public final class AudioPlayer: NSObject, AudioPlayable {
     private var playerItem: AVPlayerItem?
     
     deinit {
+        print("deinit \(URL(string: #filePath)!.lastPathComponent)")
+        
         audioSecondsContinuation.finish()
         audioStatusContinuation.finish()
         audioBufferRateContinuation.finish()

@@ -207,6 +207,10 @@ extension PlayPanelView {
         private let audioPlayable: AudioPlayable
         private let forwardRewindSeconds: Int
         
+        deinit {
+            print("deinit \(URL(string: #filePath)!.lastPathComponent)")
+        }
+        
         init(audioPlayable: AudioPlayable, forwardRewindSeconds: Int) {
             self.audioPlayable = audioPlayable
             self.forwardRewindSeconds = forwardRewindSeconds
