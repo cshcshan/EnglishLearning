@@ -96,6 +96,9 @@ public struct PlayPanelView: View {
             }
         }
         .disabled(!store.state.canPlay)
+        .onDisappear {
+            Task { await self.store.send(.pause) }
+        }
         .task { await self.store.send(.observeAudioStatus) }
         .task { await self.store.send(.observeAudioTime) }
         .task { await self.store.send(.observeBufferRate) }
