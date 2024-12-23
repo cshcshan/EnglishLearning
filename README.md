@@ -23,7 +23,6 @@ iOS 17+
 
 ## TODO
 
-- Favorite Episodes
 - Vocabulary Bank
 - Flashcards
 - Live Activity
