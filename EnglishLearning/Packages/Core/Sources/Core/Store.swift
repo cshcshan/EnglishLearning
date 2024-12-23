@@ -19,7 +19,15 @@ public final class Store<State: Sendable, Action: Sendable> {
         case action(Action)
     }
 
-    public private(set) var state: State
+    public private(set) var state: State {
+        didSet {
+            #if DEBUG
+            Task {
+                await Log.viewState.add(level: .debug, message: "\(state)")
+            }
+            #endif
+        }
+    }
     private let reducer: Reducer
     
     deinit {
@@ -32,10 +40,6 @@ public final class Store<State: Sendable, Action: Sendable> {
     ) {
         self.state = state
         self.reducer = reducer
-        
-        #if DEBUG
-//        self.startObservingState()
-        #endif
     }
 
     public func send(_ action: Action) async {
@@ -47,21 +51,5 @@ public final class Store<State: Sendable, Action: Sendable> {
                 await self.send(action)
             }
         }
-    }
-    
-    private func startObservingState() {
-        withObservationTracking {
-            _ = state
-        } onChange: {
-            Task { [weak self] in
-                guard let self else { return }
-                await Log.viewState.add(level: .debug, message: "\(self.state)")
-            }
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                self.startObservingState()
-            }
-        }
-
     }
 }
