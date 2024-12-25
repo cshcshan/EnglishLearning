@@ -31,7 +31,10 @@ public struct EpisodesView: View {
             .refreshable { await store.send(.fetchData(isForce: true)) }
             .task { await store.send(.fetchData(isForce: false)) }
             .listStyle(.plain)
-            .navigationDestination(for: Episode.self) { makeDetailView(episode: $0) }
+            .navigationDestination(for: Episode.self) { episode in
+                Task { await store.send(.episodeTapped(episode)) }
+                return makeDetailView(episode: episode)
+            }
         }
         .overlay(alignment: .bottom) {
             if store.state.needsShowPlayPanel {
@@ -199,14 +202,24 @@ public struct EpisodesView: View {
     }
     
     private func makePlayPanelView() -> some View {
-        PlayPanelView(audioURL: .constant(store.state.audioURL))
-            .padding(20)
-            .background {
-                Color.white
-                    .shadow(radius: 8)
-                    .mask(Rectangle().padding(.top, -20))
-                    .ignoresSafeArea()
-            }
+        VStack(spacing: 16) {
+            // Add a space to prevent the height of `VStack` from shrunk
+            Text(store.state.selectedEpisode?.title ?? " ")
+                .font(.title2)
+            PlayPanelView(audioURL: .constant(store.state.audioURL))
+        }
+        .padding(20)
+        .background {
+            UnevenRoundedRectangle(
+                topLeadingRadius: 16,
+                topTrailingRadius: 16,
+                style: .continuous
+            )
+            .foregroundStyle(.white)
+            .shadow(radius: 8)
+            .mask(Rectangle().padding(.top, -20))
+            .ignoresSafeArea()
+        }
     }
 }
 

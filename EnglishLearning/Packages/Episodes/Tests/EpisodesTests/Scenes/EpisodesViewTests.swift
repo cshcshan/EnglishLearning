@@ -214,6 +214,7 @@ struct EpisodesViewTests {
             allEpisodes: arguments.expectedAllEpisodes,
             favoriteEpisodes: arguments.expectedFavoriteEpisodes,
             selectedListType: .all,
+            selectedEpisode: nil,
             needsShowPlayPanel: false,
             audioURL: nil,
             fetchDataError: nil
@@ -302,6 +303,7 @@ struct EpisodesViewTests {
                 allEpisodes: episodes,
                 favoriteEpisodes: [],
                 selectedListType: .all,
+                selectedEpisode: nil,
                 needsShowPlayPanel: false,
                 audioURL: nil,
                 fetchDataError: DummyError.fetchServerDataError
@@ -319,6 +321,32 @@ struct EpisodesViewTests {
         #expect(sut.state.fetchDataError == nil)
         #expect(sut.state.isFetchingData == arguments.isFetching)
         #expect(sut.state.allEpisodes == episodes)
+    }
+    
+    @Test func episodeTapped() async throws {
+        let reducer = EpisodesView.ViewReducer(
+            htmlConvertable: MockHtmlConverter(),
+            dataProvideable: MockDataSource(),
+            userDefaultsManagerable: MockUserDefaultsManager(),
+            hasServerNewEpisodes: false
+        )
+        let state = ViewState(
+            isFetchingData: false,
+            allEpisodes: [],
+            favoriteEpisodes: [],
+            selectedListType: .all,
+            selectedEpisode: nil,
+            needsShowPlayPanel: false,
+            audioURL: nil,
+            fetchDataError: nil
+        )
+        let sut = ViewStore(initialState: state, reducer: reducer.process)
+        
+        let episode = Episode.dummy(withIndex: 100)
+        
+        await sut.send(.episodeTapped(episode))
+        
+        #expect(sut.state.selectedEpisode == episode)
     }
     
     @Test(arguments: [
@@ -428,6 +456,7 @@ struct EpisodesViewTests {
             allEpisodes: arguments.initialEpisodes,
             favoriteEpisodes: arguments.initialFavoriteEpisodes,
             selectedListType: .all,
+            selectedEpisode: nil,
             needsShowPlayPanel: false,
             audioURL: nil,
             fetchDataError: nil
@@ -444,6 +473,7 @@ struct EpisodesViewTests {
             allEpisodes: arguments.expectedAllEpisodes,
             favoriteEpisodes: arguments.expectedFavoriteEpisodes,
             selectedListType: .all,
+            selectedEpisode: nil,
             needsShowPlayPanel: false,
             audioURL: nil,
             fetchDataError: nil
@@ -562,6 +592,7 @@ struct EpisodesViewTests {
             allEpisodes: arguments.initialEpisodes,
             favoriteEpisodes: arguments.initialFavoriteEpisodes,
             selectedListType: .all,
+            selectedEpisode: nil,
             needsShowPlayPanel: false,
             audioURL: nil,
             fetchDataError: nil
@@ -578,6 +609,7 @@ struct EpisodesViewTests {
             allEpisodes: arguments.expectedAllEpisodes,
             favoriteEpisodes: arguments.expectedFavoriteEpisodes,
             selectedListType: .all,
+            selectedEpisode: nil,
             needsShowPlayPanel: false,
             audioURL: nil,
             fetchDataError: nil
@@ -616,6 +648,7 @@ struct EpisodesViewTests {
             allEpisodes: [],
             favoriteEpisodes: [],
             selectedListType: .all,
+            selectedEpisode: nil,
             needsShowPlayPanel: false,
             audioURL: nil,
             fetchDataError: nil
@@ -640,6 +673,7 @@ struct EpisodesViewTests {
             allEpisodes: [],
             favoriteEpisodes: [],
             selectedListType: .all,
+            selectedEpisode: nil,
             needsShowPlayPanel: true,
             audioURL: URL(
                 string: "https://downloads.bbc.co.uk/learningenglish/features/6min/241114_6_minute_english_the_bond_between_sisters_download.mp3"

@@ -27,6 +27,7 @@ extension EpisodesView {
         let allEpisodes: [Episode]
         let favoriteEpisodes: [Episode]
         let selectedListType: ListType
+        let selectedEpisode: Episode?
         let needsShowPlayPanel: Bool
         let audioURL: URL?
         let fetchDataError: Error?
@@ -37,6 +38,7 @@ extension EpisodesView {
                 allEpisodes: [],
                 favoriteEpisodes: [],
                 selectedListType: .all,
+                selectedEpisode: nil,
                 needsShowPlayPanel: false,
                 audioURL: nil,
                 fetchDataError: nil
@@ -48,7 +50,8 @@ extension EpisodesView {
             isFetchingData: Bool? = nil,
             allEpisodes: [Episode]? = nil,
             favoriteEpisodes: [Episode]? = nil,
-            selectedListType: ListType? = nil
+            selectedListType: ListType? = nil,
+            selectedEpisode: Episode? = nil
         ) -> ViewState {
             build(
                 with: state,
@@ -56,6 +59,7 @@ extension EpisodesView {
                 allEpisodes: allEpisodes,
                 favoriteEpisodes: favoriteEpisodes,
                 selectedListType: selectedListType,
+                selectedEpisode: selectedEpisode,
                 fetchDataError: state.fetchDataError
             )
         }
@@ -66,6 +70,7 @@ extension EpisodesView {
             allEpisodes: [Episode]? = nil,
             favoriteEpisodes: [Episode]? = nil,
             selectedListType: ListType? = nil,
+            selectedEpisode: Episode? = nil,
             fetchDataError: Error?
         ) -> ViewState {
             ViewState(
@@ -73,6 +78,7 @@ extension EpisodesView {
                 allEpisodes: allEpisodes ?? state.allEpisodes,
                 favoriteEpisodes: favoriteEpisodes ?? state.favoriteEpisodes,
                 selectedListType: selectedListType ?? state.selectedListType,
+                selectedEpisode: selectedEpisode ?? state.selectedEpisode,
                 needsShowPlayPanel: state.needsShowPlayPanel,
                 audioURL: state.audioURL,
                 fetchDataError: fetchDataError
@@ -89,6 +95,7 @@ extension EpisodesView {
                 allEpisodes: state.allEpisodes,
                 favoriteEpisodes: state.favoriteEpisodes,
                 selectedListType: state.selectedListType,
+                selectedEpisode: state.selectedEpisode,
                 needsShowPlayPanel: needsShowPlayPanel,
                 audioURL: audioURL,
                 fetchDataError: state.fetchDataError
@@ -100,6 +107,7 @@ extension EpisodesView {
         case listTypeTapped(ListType)
         case fetchData(isForce: Bool)
         case confirmErrorAlert
+        case episodeTapped(Episode)
         case addFavorite(episodeID: String)
         case removeFavorite(episodeID: String)
         case episodeDetailLoaded(EpisodeDetail)
@@ -149,6 +157,7 @@ extension EpisodesView {
                                 allEpisodes: organizedEpisodes.all,
                                 favoriteEpisodes: organizedEpisodes.favorite,
                                 selectedListType: state.selectedListType,
+                                selectedEpisode: state.selectedEpisode,
                                 needsShowPlayPanel: state.needsShowPlayPanel,
                                 audioURL: state.audioURL,
                                 fetchDataError: nil
@@ -162,6 +171,8 @@ extension EpisodesView {
                         }
                     case .confirmErrorAlert:
                         newState = .build(with: state, fetchDataError: nil)
+                    case let .episodeTapped(episode):
+                        newState = .build(with: state, selectedEpisode: episode)
                     case let .addFavorite(episodeID):
                         self.userDefaultsManagerable.favoriteEpisodeIDs.insert(episodeID)
                         let organizedEpisodes = self.organizeEpisodes(allEpisodes: state.allEpisodes)
