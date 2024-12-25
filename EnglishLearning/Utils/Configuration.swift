@@ -9,4 +9,5 @@ import Foundation
 
 enum Configuration {
     static let groupID = "group.com.csh.EnglishLearning"
+    static let dbFileaname = "EL.sqlite"
 }

@@ -30,7 +30,8 @@ struct EnglishLearningApp: App {
         do {
             // TODO: to add Models after creation
             let schema = Schema([Episode.self, EpisodeDetail.self])
-            let modelConfiguration = ModelConfiguration(schema: schema)
+            let url = FileManager.default.appGroup?.appendingPathComponent(Configuration.dbFileaname)
+            let modelConfiguration = ModelConfiguration(schema: schema, url: url!)
             let modelContainer = try ModelContainer(for: schema, configurations: modelConfiguration)
             
             self.dataSource = try DataSource(with: modelContainer)
@@ -45,9 +46,7 @@ struct EnglishLearningApp: App {
         let libraryURL = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first
         print("Library \(libraryURL?.absoluteString ?? "")")
         
-        let appGroupURL = FileManager.default.containerURL(
-            forSecurityApplicationGroupIdentifier: Configuration.groupID
-        )
+        let appGroupURL = FileManager.default.appGroup
         print("App Group \(appGroupURL?.absoluteString ?? "")")
     }
 }
