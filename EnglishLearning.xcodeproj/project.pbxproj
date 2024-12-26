@@ -54,6 +54,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		330CE76C2D1D3F5500B46CED /* FavoriteEpisodesWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FavoriteEpisodesWidgetExtension.entitlements; sourceTree = "<group>"; };
 		333556582CF03D3F00C5F606 /* EnglishLearning.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EnglishLearning.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3335566A2CF03D4000C5F606 /* EnglishLearningTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EnglishLearningTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		333556742CF03D4000C5F606 /* EnglishLearningUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EnglishLearningUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -160,6 +161,7 @@
 		3335564F2CF03D3F00C5F606 = {
 			isa = PBXGroup;
 			children = (
+				330CE76C2D1D3F5500B46CED /* FavoriteEpisodesWidgetExtension.entitlements */,
 				3335565A2CF03D3F00C5F606 /* EnglishLearning */,
 				3335566D2CF03D4000C5F606 /* EnglishLearningTests */,
 				333556772CF03D4000C5F606 /* EnglishLearningUITests */,
@@ -674,6 +676,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = FavoriteEpisodesWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = QL662FZ3MK;
@@ -702,6 +705,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = FavoriteEpisodesWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = QL662FZ3MK;
