@@ -20,7 +20,8 @@ struct EnglishLearningApp: App {
             EpisodesView(
                 htmlConvertable: HtmlConverter(),
                 dataSource: dataSource,
-                userDefaultsManagerable: UserDefaultsManager(store: UserDefaults.appGroup)
+                userDefaultsManagerable: UserDefaultsManager(store: UserDefaults.appGroup),
+                widgetManagerable: WidgetManager()
             )
         }
         .modelContainer(dataSource.modelContainer)

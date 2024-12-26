@@ -87,7 +87,8 @@ public struct EpisodesView: View {
     public init(
         htmlConvertable: HtmlConvertable,
         dataSource: DataSource,
-        userDefaultsManagerable: UserDefaultsManagerable
+        userDefaultsManagerable: UserDefaultsManagerable,
+        widgetManagerable: WidgetManagerable
     ) {
         self.htmlConvertable = htmlConvertable
         self.dataSource = dataSource
@@ -97,6 +98,7 @@ public struct EpisodesView: View {
             htmlConvertable: htmlConvertable,
             dataProvideable: dataSource,
             userDefaultsManagerable: userDefaultsManagerable,
+            widgetManagerable: widgetManagerable,
             hasServerNewEpisodes: serverNewEpisodesChecker.hasServerNewEpisodes(with: Date())
         )
         self.store = EpisodesStore(initialState: .default, reducer: reducer.process)
@@ -229,13 +231,12 @@ public struct EpisodesView: View {
     let mockHtmlConverter = MockHtmlConverter()
     Task { await mockHtmlConverter.setLoadEpisodesResult(.success(episodes)) }
     let dataSource = try! DataSource(with: .mock(isStoredInMemoryOnly: true))
-    
-    let mockUserDefaultsManager = MockUserDefaultsManager()
 
     return EpisodesView(
         htmlConvertable: mockHtmlConverter,
         dataSource: dataSource,
-        userDefaultsManagerable: mockUserDefaultsManager
+        userDefaultsManagerable: MockUserDefaultsManager(),
+        widgetManagerable: MockWidgetManager()
     )
 }
 
@@ -243,12 +244,11 @@ public struct EpisodesView: View {
     let mockHtmlConverter = MockHtmlConverter()
     Task { await mockHtmlConverter.setLoadEpisodesResult(.failure(DummyError.fetchServerDataError)) }
     let dataSource = try! DataSource(with: .mock(isStoredInMemoryOnly: true))
-    
-    let mockUserDefaultsManager = MockUserDefaultsManager()
 
     return EpisodesView(
         htmlConvertable: mockHtmlConverter,
         dataSource: dataSource,
-        userDefaultsManagerable: mockUserDefaultsManager
+        userDefaultsManagerable: MockUserDefaultsManager(),
+        widgetManagerable: MockWidgetManager()
     )
 }

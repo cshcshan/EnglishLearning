@@ -175,6 +175,7 @@ extension EpisodesView {
                         newState = .build(with: state, selectedEpisode: episode)
                     case let .addFavorite(episodeID):
                         self.userDefaultsManagerable.favoriteEpisodeIDs.insert(episodeID)
+                        self.widgetManagerable.reloadAllTimelines()
                         let organizedEpisodes = self.organizeEpisodes(allEpisodes: state.allEpisodes)
                         newState = .build(
                             with: state,
@@ -183,6 +184,7 @@ extension EpisodesView {
                         )
                     case let .removeFavorite(episodeID):
                         self.userDefaultsManagerable.favoriteEpisodeIDs.remove(episodeID)
+                        self.widgetManagerable.reloadAllTimelines()
                         let organizedEpisodes = self.organizeEpisodes(allEpisodes: state.allEpisodes)
                         newState = .build(
                             with: state,
@@ -211,6 +213,7 @@ extension EpisodesView {
         private let htmlConvertable: HtmlConvertable
         private let dataProvideable: any DataProvideable
         private var userDefaultsManagerable: UserDefaultsManagerable
+        private var widgetManagerable: WidgetManagerable
         private let hasServerNewEpisodes: Bool
         
         deinit {
@@ -221,11 +224,13 @@ extension EpisodesView {
             htmlConvertable: HtmlConvertable,
             dataProvideable: any DataProvideable,
             userDefaultsManagerable: UserDefaultsManagerable,
+            widgetManagerable: WidgetManagerable,
             hasServerNewEpisodes: Bool
         ) {
             self.htmlConvertable = htmlConvertable
             self.dataProvideable = dataProvideable
             self.userDefaultsManagerable = userDefaultsManagerable
+            self.widgetManagerable = widgetManagerable
             self.hasServerNewEpisodes = hasServerNewEpisodes
         }
         

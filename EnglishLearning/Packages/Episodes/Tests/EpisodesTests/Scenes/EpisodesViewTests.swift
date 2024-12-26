@@ -125,11 +125,12 @@ struct EpisodesViewTests {
 
         let mockHtmlConverter = MockHtmlConverter()
         let mockDataSource = try DataSource.mock(with: localEpisodes)
-        let mockUserDefaultsManager = MockUserDefaultsManager()
+
         let reducer = EpisodesView.ViewReducer(
             htmlConvertable: mockHtmlConverter,
             dataProvideable: mockDataSource,
-            userDefaultsManagerable: mockUserDefaultsManager,
+            userDefaultsManagerable: MockUserDefaultsManager(),
+            widgetManagerable: MockWidgetManager(),
             hasServerNewEpisodes: hasServerNewEpisodes
         )
         
@@ -199,6 +200,7 @@ struct EpisodesViewTests {
             htmlConvertable: MockHtmlConverter(),
             dataProvideable: mockDataSource,
             userDefaultsManagerable: mockUserDefaultsManager,
+            widgetManagerable: MockWidgetManager(),
             hasServerNewEpisodes: false
         )
         
@@ -249,11 +251,12 @@ struct EpisodesViewTests {
 
         let mockHtmlConverter = MockHtmlConverter(loadEpisodesResult: .failure(.fetchServerDataError))
         let mockDataSource = MockDataSource(fetchResult: .failure(.fetchLocalDataError))
-        let mockUserDefaultsManager = MockUserDefaultsManager()
+
         let reducer = EpisodesView.ViewReducer(
             htmlConvertable: mockHtmlConverter,
             dataProvideable: mockDataSource,
-            userDefaultsManagerable: mockUserDefaultsManager,
+            userDefaultsManagerable: MockUserDefaultsManager(),
+            widgetManagerable: MockWidgetManager(),
             hasServerNewEpisodes: false
         )
         
@@ -287,11 +290,12 @@ struct EpisodesViewTests {
     func confirmErrorAlert(arguments: ConfirmErrorArguments) async throws {
         let mockHtmlConverter = MockHtmlConverter()
         let mockDataSource = MockDataSource()
-        let mockUserDefaultsManager = MockUserDefaultsManager()
+
         let reducer = EpisodesView.ViewReducer(
             htmlConvertable: mockHtmlConverter,
             dataProvideable: mockDataSource,
-            userDefaultsManagerable: mockUserDefaultsManager,
+            userDefaultsManagerable: MockUserDefaultsManager(),
+            widgetManagerable: MockWidgetManager(),
             hasServerNewEpisodes: false
         )
 
@@ -328,6 +332,7 @@ struct EpisodesViewTests {
             htmlConvertable: MockHtmlConverter(),
             dataProvideable: MockDataSource(),
             userDefaultsManagerable: MockUserDefaultsManager(),
+            widgetManagerable: MockWidgetManager(),
             hasServerNewEpisodes: false
         )
         let state = ViewState(
@@ -444,10 +449,12 @@ struct EpisodesViewTests {
         let mockHtmlConverter = MockHtmlConverter()
         let mockDataSource = MockDataSource()
         let mockUserDefaultsManager = MockUserDefaultsManager(favoriteEpisodeIDs: ["1", "2", "3"])
+        let mockWidgetManager = MockWidgetManager()
         let reducer = EpisodesView.ViewReducer(
             htmlConvertable: mockHtmlConverter,
             dataProvideable: mockDataSource,
             userDefaultsManagerable: mockUserDefaultsManager,
+            widgetManagerable: mockWidgetManager,
             hasServerNewEpisodes: false
         )
 
@@ -479,6 +486,7 @@ struct EpisodesViewTests {
             fetchDataError: nil
         )
         #expect(sut.state == expectedViewState)
+        #expect(mockWidgetManager.reloadAllTimelinesCount == 1)
     }
     
     @Test(arguments: [
@@ -580,10 +588,12 @@ struct EpisodesViewTests {
         let mockHtmlConverter = MockHtmlConverter()
         let mockDataSource = MockDataSource()
         let mockUserDefaultsManager = MockUserDefaultsManager(favoriteEpisodeIDs: ["1", "2", "3"])
+        let mockWidgetManager = MockWidgetManager()
         let reducer = EpisodesView.ViewReducer(
             htmlConvertable: mockHtmlConverter,
             dataProvideable: mockDataSource,
             userDefaultsManagerable: mockUserDefaultsManager,
+            widgetManagerable: mockWidgetManager,
             hasServerNewEpisodes: false
         )
 
@@ -615,6 +625,7 @@ struct EpisodesViewTests {
             fetchDataError: nil
         )
         #expect(sut.state == expectedViewState)
+        #expect(mockWidgetManager.reloadAllTimelinesCount == 1)
     }
     
     @Test(
@@ -641,6 +652,7 @@ struct EpisodesViewTests {
             htmlConvertable: MockHtmlConverter(),
             dataProvideable: MockDataSource(),
             userDefaultsManagerable: MockUserDefaultsManager(),
+            widgetManagerable: MockWidgetManager(),
             hasServerNewEpisodes: false
         )
         let state = ViewState(
@@ -666,6 +678,7 @@ struct EpisodesViewTests {
             htmlConvertable: MockHtmlConverter(),
             dataProvideable: MockDataSource(),
             userDefaultsManagerable: MockUserDefaultsManager(),
+            widgetManagerable: MockWidgetManager(),
             hasServerNewEpisodes: false
         )
         let state = ViewState(

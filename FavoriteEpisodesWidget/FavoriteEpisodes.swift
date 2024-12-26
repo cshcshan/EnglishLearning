@@ -35,10 +35,12 @@ struct FavoriteEpisodes {
 
         guard let dataSource, !favEpisodeIDs.isEmpty else { return [] }
         
-        // Since the error "Predicate body may only contain one expression" occurred, we couldn't use
-        // `guard-else` here
+        // 1. Since the error "Predicate body may only contain one expression" occurred, we couldn't use
+        //    `guard-else` here.
+        // 2. Since the error "Unsupported Predicate: The 'Foundation.PredicateExpressions.ForcedUnwrap'
+        //    operator is not supported", we couldn't use `episode.id!` directly
         let predicate = #Predicate<Episode>{ episode in
-            episode.id != nil && favEpisodeIDs.contains(episode.id!)
+            episode.id.flatMap { id in favEpisodeIDs.contains(id) } ?? false
         }
         let sortBy = SortDescriptor<Episode>(\.date, order: .reverse)
 
