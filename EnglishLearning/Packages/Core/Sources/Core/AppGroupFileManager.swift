@@ -32,11 +32,15 @@ public struct AppGroupFileManager: AppGroupFileManagerable {
 
             var folderPath = fileURL
             folderPath.deleteLastPathComponent()
-            if !FileManager.default.fileExists(atPath: folderPath.absoluteString) {
+            // Using `path()` instead of `absoluteString` for `fileExists()`, otherwise, the result
+            // always **false**
+            if !FileManager.default.fileExists(atPath: folderPath.path()) {
                 try FileManager.default.createDirectory(at: folderPath, withIntermediateDirectories: true)
             }
             
-            if FileManager.default.fileExists(atPath: fileURL.absoluteString) {
+            // Using `path()` instead of `absoluteString` for `fileExists()`, otherwise, the result
+            // always **false**
+            if FileManager.default.fileExists(atPath: fileURL.path()) {
                 try FileManager.default.removeItem(at: fileURL)
             }
             
@@ -47,12 +51,11 @@ public struct AppGroupFileManager: AppGroupFileManagerable {
     public func remove(filename: String) throws {
         let filename = filename.replacingOccurrences(of: " ", with: "")
         let fileURL = appGroupURL.appending(path: filename, directoryHint: .notDirectory)
-        guard FileManager.default.fileExists(atPath: fileURL.absoluteString) else { return }
+        // Using `path()` instead of `absoluteString` for `fileExists()`, otherwise, the result
+        // always **false**
+        guard FileManager.default.fileExists(atPath: fileURL.path()) else { return }
+        Task { await Log.file.add(level: .debug, message: "Remove \(fileURL.absoluteString)") }
         try FileManager.default.removeItem(at: fileURL)
-        
-        Task {
-            await Log.file.add(level: .debug, message: "Remove \(fileURL.absoluteString)")
-        }
     }
     
     public func load(filename: String) throws -> Data {
