@@ -28,12 +28,7 @@ struct EnglishLearningApp: App {
     
     init() {
         do {
-            // TODO: to add Models after creation
-            let schema = Schema([Episode.self, EpisodeDetail.self])
-            let url = FileManager.default.appGroup?.appendingPathComponent(Configuration.dbFileaname)
-            let modelConfiguration = ModelConfiguration(schema: schema, url: url!)
-            let modelContainer = try ModelContainer(for: schema, configurations: modelConfiguration)
-            
+            let modelContainer = try ModelContainer.buildProd()
             self.dataSource = try DataSource(with: modelContainer)
         } catch {
             fatalError()

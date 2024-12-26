@@ -63,6 +63,16 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		330CE7612D1D2F0000B46CED /* Exceptions for "EnglishLearning" folder in "FavoriteEpisodesWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"Extensions/FileManager+Extension.swift",
+				"Extensions/ModelContainer+Extension.swift",
+				"Extensions/UserDefaults+Extension.swift",
+				Utils/Configuration.swift,
+			);
+			target = 33FCD3D52D1D2B4300935C08 /* FavoriteEpisodesWidgetExtension */;
+		};
 		330D4D412CF219BC008BE93C /* Exceptions for "EnglishLearning" folder in "EnglishLearning" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -85,6 +95,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				330D4D412CF219BC008BE93C /* Exceptions for "EnglishLearning" folder in "EnglishLearning" target */,
+				330CE7612D1D2F0000B46CED /* Exceptions for "EnglishLearning" folder in "FavoriteEpisodesWidgetExtension" target */,
 			);
 			path = EnglishLearning;
 			sourceTree = "<group>";
