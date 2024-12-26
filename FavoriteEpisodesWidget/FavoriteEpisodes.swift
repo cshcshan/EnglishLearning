@@ -31,9 +31,10 @@ struct FavoriteEpisodes {
     }
     
     func callAsFunction() -> [Episode] {
-        guard let dataSource else { return [] }
-        
         let favEpisodeIDs = userDefaultsManager.favoriteEpisodeIDs
+
+        guard let dataSource, !favEpisodeIDs.isEmpty else { return [] }
+        
         // Since the error "Predicate body may only contain one expression" occurred, we couldn't use
         // `guard-else` here
         let predicate = #Predicate<Episode>{ episode in
