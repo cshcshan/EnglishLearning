@@ -34,6 +34,7 @@ extension Log {
     
     public static let network = Log(subsystem: subsystem, category: "network")
     public static let data = Log(subsystem: subsystem, category: "data")
+    public static let file = Log(subsystem: subsystem, category: "file")
     public static let ui = Log(subsystem: subsystem, category: "UI")
     public static let viewState = Log(subsystem: subsystem, category: "viewState")
     public static let audio = Log(subsystem: subsystem, category: "audio")

@@ -10,4 +10,5 @@ import Foundation
 enum Configuration {
     static let groupID = "group.com.csh.EnglishLearning"
     static let dbFileaname = "EL.sqlite"
+    static let episodeImagePathFormat = "Images/Episode/%@.png"
 }

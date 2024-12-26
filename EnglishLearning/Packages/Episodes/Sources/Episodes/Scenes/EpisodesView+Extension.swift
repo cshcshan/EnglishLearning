@@ -174,9 +174,27 @@ extension EpisodesView {
                         newState = .build(with: state, selectedEpisode: episode)
                     case let .favoriteTapped(episode):
                         if let id = episode.id {
+                            let filename = String(format: self.episodeImagePathFormat, id)
+                            
                             if episode.isFavorite {
+                                do {
+                                    try self.appGroupFileManagerable.remove(filename: filename)
+                                } catch {
+                                    Log.file.add(error: error)
+                                }
+                                
                                 self.userDefaultsManagerable.favoriteEpisodeIDs.remove(id)
                             } else {
+                                if let imageURL = episode.imageURL {
+                                    do {
+                                        try self.appGroupFileManagerable.save(
+                                            remoteURL: imageURL, to: filename
+                                        )
+                                    } catch {
+                                        Log.file.add(error: error)
+                                    }
+                                }
+                                
                                 self.userDefaultsManagerable.favoriteEpisodeIDs.insert(id)
                             }
                             
@@ -212,7 +230,9 @@ extension EpisodesView {
         private let htmlConvertable: HtmlConvertable
         private let dataProvideable: any DataProvideable
         private var userDefaultsManagerable: UserDefaultsManagerable
+        private var appGroupFileManagerable: AppGroupFileManagerable
         private var widgetManagerable: WidgetManagerable
+        private let episodeImagePathFormat: String
         private let hasServerNewEpisodes: Bool
         
         deinit {
@@ -223,13 +243,17 @@ extension EpisodesView {
             htmlConvertable: HtmlConvertable,
             dataProvideable: any DataProvideable,
             userDefaultsManagerable: UserDefaultsManagerable,
+            appGroupFileManagerable: AppGroupFileManagerable,
             widgetManagerable: WidgetManagerable,
+            episodeImagePathFormat: String,
             hasServerNewEpisodes: Bool
         ) {
             self.htmlConvertable = htmlConvertable
             self.dataProvideable = dataProvideable
             self.userDefaultsManagerable = userDefaultsManagerable
+            self.appGroupFileManagerable = appGroupFileManagerable
             self.widgetManagerable = widgetManagerable
+            self.episodeImagePathFormat = episodeImagePathFormat
             self.hasServerNewEpisodes = hasServerNewEpisodes
         }
         

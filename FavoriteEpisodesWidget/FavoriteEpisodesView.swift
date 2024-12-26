@@ -5,6 +5,7 @@
 //  Created by Han Chen on 2024/12/26.
 //
 
+import Core
 import Episodes
 import SwiftUI
 import WidgetKit
@@ -13,6 +14,7 @@ struct FavoriteEpisodesView : View {
     @Environment(\.widgetFamily)
     var widgetFamily
     let entry: FavoriteEpisodesEntry
+    let appGroupFileManager = AppGroupFileManager(appGroupURL: FileManager.default.appGroup!)
 
     var body: some View {
         switch widgetFamily {
@@ -62,15 +64,11 @@ struct FavoriteEpisodesView : View {
     }
     
     private func makeVerticalEpisodeView(episode: Episode?) -> some View {
-        let imageURL = URL(string: episode?.imageURLString ?? "")
-        
-        return ZStack(alignment: imageURL == nil ? .center : .bottom) {
-            if let imageURL {
-                VStack {
-                    makeImage(imageURL: imageURL, contentMode: .fit)
-                    
-                    Spacer()
-                }
+        ZStack(alignment: .bottom) {
+            VStack {
+                makeImage(episode: episode, contentMode: .fit)
+                
+                Spacer()
             }
             
             Text(episode?.title ?? " ")
@@ -85,10 +83,9 @@ struct FavoriteEpisodesView : View {
 
         let imageWidth: CGFloat = 120
         let height: CGFloat = (1080 / 1920) * imageWidth
-        let imageURL = URL(string: episode.imageURLString ?? "")
         
         return HStack(spacing: 16) {
-            makeImage(imageURL: imageURL, contentMode: .fit)
+            makeImage(episode: episode, contentMode: .fit)
                 .frame(width: imageWidth)
             
             Text(episode.title ?? " ")
@@ -97,33 +94,41 @@ struct FavoriteEpisodesView : View {
     }
     
     private func makeAccessoryCircularView(episode: Episode?) -> some View {
-        let imageURL = URL(string: episode?.imageURLString ?? "")
-        return makeImage(imageURL: imageURL, contentMode: .fill)
+        makeImage(episode: episode, contentMode: .fill)
     }
     
     private func makeAccessoryRectangularView(episode: Episode?) -> some View {
-        let imageURL = URL(string: episode?.imageURLString ?? "")
-
-        return ZStack {
-            makeImage(imageURL: imageURL, contentMode: .fill)
+        ZStack {
+            makeImage(episode: episode, contentMode: .fill)
             
             Text(episode?.title ?? "Title is empty")
                 .lineLimit(4)
         }
     }
     
-    private func makeImage(imageURL: URL?, contentMode: ContentMode) -> some View {
-        AsyncImage(url: imageURL) { image in
-            image.resizable()
-        } placeholder: {
-            Rectangle()
-                .fill(.gray.opacity(0.2))
-                .redacted(reason: .placeholder)
+    private func makeImage(episode: Episode?, contentMode: ContentMode) -> some View {
+        // `AsyncImage` in Widget Extension won't download images from the network, so using `Image`
+        // instead
+        let image = loadEpisodeImage(episode: episode) ?? UIImage()
+        return Image(uiImage: image)
+            .resizable()
+            .frame(maxWidth: .infinity)
+            .aspectRatio(1920 / 1280, contentMode: contentMode)
+            .clipShape(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+            )
+    }
+    
+    private func loadEpisodeImage(episode: Episode?) -> UIImage? {
+        guard let id = episode?.id else { return nil }
+        let imagePath = String(format: Configuration.episodeImagePathFormat, id)
+        
+        do {
+            let data = try appGroupFileManager.load(filename: imagePath)
+            return UIImage(data: data)
+        } catch {
+            Task { await Log.file.add(error: error) }
+            return nil
         }
-        .frame(maxWidth: .infinity)
-        .aspectRatio(1920 / 1280, contentMode: contentMode)
-        .clipShape(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-        )
     }
 }

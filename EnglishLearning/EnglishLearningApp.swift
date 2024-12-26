@@ -21,7 +21,9 @@ struct EnglishLearningApp: App {
                 htmlConvertable: HtmlConverter(),
                 dataSource: dataSource,
                 userDefaultsManagerable: UserDefaultsManager(store: UserDefaults.appGroup),
-                widgetManagerable: WidgetManager()
+                appGroupFileManagerable: AppGroupFileManager(appGroupURL: FileManager.default.appGroup!),
+                widgetManagerable: WidgetManager(),
+                episodeImagePathFormat: Configuration.episodeImagePathFormat
             )
         }
         .modelContainer(dataSource.modelContainer)

@@ -88,7 +88,9 @@ public struct EpisodesView: View {
         htmlConvertable: HtmlConvertable,
         dataSource: DataSource,
         userDefaultsManagerable: UserDefaultsManagerable,
-        widgetManagerable: WidgetManagerable
+        appGroupFileManagerable: AppGroupFileManagerable,
+        widgetManagerable: WidgetManagerable,
+        episodeImagePathFormat: String
     ) {
         self.htmlConvertable = htmlConvertable
         self.dataSource = dataSource
@@ -98,7 +100,9 @@ public struct EpisodesView: View {
             htmlConvertable: htmlConvertable,
             dataProvideable: dataSource,
             userDefaultsManagerable: userDefaultsManagerable,
+            appGroupFileManagerable: appGroupFileManagerable,
             widgetManagerable: widgetManagerable,
+            episodeImagePathFormat: episodeImagePathFormat,
             hasServerNewEpisodes: serverNewEpisodesChecker.hasServerNewEpisodes(with: Date())
         )
         self.store = EpisodesStore(initialState: .default, reducer: reducer.process)
@@ -229,7 +233,9 @@ public struct EpisodesView: View {
         htmlConvertable: mockHtmlConverter,
         dataSource: dataSource,
         userDefaultsManagerable: MockUserDefaultsManager(),
-        widgetManagerable: MockWidgetManager()
+        appGroupFileManagerable: MockAppGroupFileManager(),
+        widgetManagerable: MockWidgetManager(),
+        episodeImagePathFormat: "Images/Episode/%@.png"
     )
 }
 
@@ -242,6 +248,8 @@ public struct EpisodesView: View {
         htmlConvertable: mockHtmlConverter,
         dataSource: dataSource,
         userDefaultsManagerable: MockUserDefaultsManager(),
-        widgetManagerable: MockWidgetManager()
+        appGroupFileManagerable: MockAppGroupFileManager(),
+        widgetManagerable: MockWidgetManager(),
+        episodeImagePathFormat: "Images/Episode/%@.png"
     )
 }

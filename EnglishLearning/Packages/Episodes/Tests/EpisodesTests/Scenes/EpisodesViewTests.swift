@@ -126,11 +126,13 @@ struct EpisodesViewTests {
         let mockHtmlConverter = MockHtmlConverter()
         let mockDataSource = try DataSource.mock(with: localEpisodes)
 
-        let reducer = EpisodesView.ViewReducer(
+        let reducer = ViewReducer(
             htmlConvertable: mockHtmlConverter,
             dataProvideable: mockDataSource,
             userDefaultsManagerable: MockUserDefaultsManager(),
+            appGroupFileManagerable: MockAppGroupFileManager(),
             widgetManagerable: MockWidgetManager(),
+            episodeImagePathFormat: "",
             hasServerNewEpisodes: hasServerNewEpisodes
         )
         
@@ -196,11 +198,13 @@ struct EpisodesViewTests {
         let mockUserDefaultsManager = MockUserDefaultsManager(
             favoriteEpisodeIDs: arguments.favoriteEpisodeIDs
         )
-        let reducer = EpisodesView.ViewReducer(
+        let reducer = ViewReducer(
             htmlConvertable: MockHtmlConverter(),
             dataProvideable: mockDataSource,
             userDefaultsManagerable: mockUserDefaultsManager,
+            appGroupFileManagerable: MockAppGroupFileManager(),
             widgetManagerable: MockWidgetManager(),
+            episodeImagePathFormat: "",
             hasServerNewEpisodes: false
         )
         
@@ -252,11 +256,13 @@ struct EpisodesViewTests {
         let mockHtmlConverter = MockHtmlConverter(loadEpisodesResult: .failure(.fetchServerDataError))
         let mockDataSource = MockDataSource(fetchResult: .failure(.fetchLocalDataError))
 
-        let reducer = EpisodesView.ViewReducer(
+        let reducer = ViewReducer(
             htmlConvertable: mockHtmlConverter,
             dataProvideable: mockDataSource,
             userDefaultsManagerable: MockUserDefaultsManager(),
+            appGroupFileManagerable: MockAppGroupFileManager(),
             widgetManagerable: MockWidgetManager(),
+            episodeImagePathFormat: "",
             hasServerNewEpisodes: false
         )
         
@@ -291,11 +297,13 @@ struct EpisodesViewTests {
         let mockHtmlConverter = MockHtmlConverter()
         let mockDataSource = MockDataSource()
 
-        let reducer = EpisodesView.ViewReducer(
+        let reducer = ViewReducer(
             htmlConvertable: mockHtmlConverter,
             dataProvideable: mockDataSource,
             userDefaultsManagerable: MockUserDefaultsManager(),
+            appGroupFileManagerable: MockAppGroupFileManager(),
             widgetManagerable: MockWidgetManager(),
+            episodeImagePathFormat: "",
             hasServerNewEpisodes: false
         )
 
@@ -328,11 +336,13 @@ struct EpisodesViewTests {
     }
     
     @Test func episodeTapped() async throws {
-        let reducer = EpisodesView.ViewReducer(
+        let reducer = ViewReducer(
             htmlConvertable: MockHtmlConverter(),
             dataProvideable: MockDataSource(),
             userDefaultsManagerable: MockUserDefaultsManager(),
+            appGroupFileManagerable: MockAppGroupFileManager(),
             widgetManagerable: MockWidgetManager(),
+            episodeImagePathFormat: "",
             hasServerNewEpisodes: false
         )
         let state = ViewState(
@@ -449,12 +459,15 @@ struct EpisodesViewTests {
         let mockHtmlConverter = MockHtmlConverter()
         let mockDataSource = MockDataSource()
         let mockUserDefaultsManager = MockUserDefaultsManager(favoriteEpisodeIDs: ["1", "2", "3"])
+        let appGroupFileManagerable = MockAppGroupFileManager()
         let mockWidgetManager = MockWidgetManager()
-        let reducer = EpisodesView.ViewReducer(
+        let reducer = ViewReducer(
             htmlConvertable: mockHtmlConverter,
             dataProvideable: mockDataSource,
             userDefaultsManagerable: mockUserDefaultsManager,
+            appGroupFileManagerable: appGroupFileManagerable,
             widgetManagerable: mockWidgetManager,
+            episodeImagePathFormat: "",
             hasServerNewEpisodes: false
         )
 
@@ -486,6 +499,7 @@ struct EpisodesViewTests {
             fetchDataError: nil
         )
         #expect(sut.state == expectedViewState)
+        #expect(appGroupFileManagerable.saveRemoteURLCount == 1)
         #expect(mockWidgetManager.reloadAllTimelinesCount == 1)
     }
     
@@ -588,12 +602,15 @@ struct EpisodesViewTests {
         let mockHtmlConverter = MockHtmlConverter()
         let mockDataSource = MockDataSource()
         let mockUserDefaultsManager = MockUserDefaultsManager(favoriteEpisodeIDs: ["1", "2", "3"])
+        let appGroupFileManagerable = MockAppGroupFileManager()
         let mockWidgetManager = MockWidgetManager()
-        let reducer = EpisodesView.ViewReducer(
+        let reducer = ViewReducer(
             htmlConvertable: mockHtmlConverter,
             dataProvideable: mockDataSource,
             userDefaultsManagerable: mockUserDefaultsManager,
+            appGroupFileManagerable: appGroupFileManagerable,
             widgetManagerable: mockWidgetManager,
+            episodeImagePathFormat: "",
             hasServerNewEpisodes: false
         )
 
@@ -625,6 +642,7 @@ struct EpisodesViewTests {
             fetchDataError: nil
         )
         #expect(sut.state == expectedViewState)
+        #expect(appGroupFileManagerable.removeFileItemCount == 1)
         #expect(mockWidgetManager.reloadAllTimelinesCount == 1)
     }
     
@@ -648,11 +666,13 @@ struct EpisodesViewTests {
         ]
     )
     func episodeDetailLoaded(arguments: EpisodeDetailLoaded) async throws {
-        let reducer = EpisodesView.ViewReducer(
+        let reducer = ViewReducer(
             htmlConvertable: MockHtmlConverter(),
             dataProvideable: MockDataSource(),
             userDefaultsManagerable: MockUserDefaultsManager(),
+            appGroupFileManagerable: MockAppGroupFileManager(),
             widgetManagerable: MockWidgetManager(),
+            episodeImagePathFormat: "",
             hasServerNewEpisodes: false
         )
         let state = ViewState(
@@ -674,11 +694,13 @@ struct EpisodesViewTests {
     }
     
     @Test func hidePlayPanelView() async throws {
-        let reducer = EpisodesView.ViewReducer(
+        let reducer = ViewReducer(
             htmlConvertable: MockHtmlConverter(),
             dataProvideable: MockDataSource(),
             userDefaultsManagerable: MockUserDefaultsManager(),
+            appGroupFileManagerable: MockAppGroupFileManager(),
             widgetManagerable: MockWidgetManager(),
+            episodeImagePathFormat: "",
             hasServerNewEpisodes: false
         )
         let state = ViewState(
@@ -740,13 +762,14 @@ extension [Episode] {
 
 extension Episode {
     fileprivate static func dummy(id: String) -> Episode {
-        Episode(id: id, title: nil, desc: nil, date: nil, imageURLString: nil, urlString: nil)
+        let imageURLString = "https://ichef.bbci.co.uk/images/ic/1920xn/p0k67wpv.jpg"
+        return Episode(
+            id: id, title: nil, desc: nil, date: nil, imageURLString: imageURLString, urlString: nil
+        )
     }
     
     fileprivate static func dummyFav(id: String) -> Episode {
-        let episode = Episode(
-            id: id, title: nil, desc: nil, date: nil, imageURLString: nil, urlString: nil
-        )
+        let episode = Episode.dummy(id: id)
         episode.isFavorite = true
         return episode
     }
