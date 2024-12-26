@@ -31,13 +31,51 @@ struct FavoriteEpisodesWidget: Widget {
     FavoriteEpisodesEntry(
         episodes: [
             Episode(
-                id: "Episode ID",
-                title: "Episode Title",
-                desc: "Episode Desc",
+                id: "Episode 1",
+                title: "The first episode title and it should be loooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong",
+                desc: nil,
                 date: nil,
                 imageURLString: "https://ichef.bbci.co.uk/images/ic/1920xn/p0k67wpv.jpg",
+                urlString: nil
+            ),
+            Episode(
+                id: "Episode 2",
+                title: "My second episode",
+                desc: nil,
+                date: nil,
+                imageURLString: "https://ichef.bbci.co.uk/images/ic/1920xn/p0k67wpv.jpg",
+                urlString: nil
+            ),
+            Episode(
+                id: "Episode 3",
+                title: "The third but may not be the last if I add others to this array later",
+                desc: nil,
+                date: nil,
+                imageURLString: "https://ichef.bbci.co.uk/images/ic/1920xn/p0k67wpv.jpg",
+                urlString: nil
+            ),
+            Episode(
+                id: "Episode 4",
+                title: "The fourth episode doesn't have the image URL",
+                desc: nil,
+                date: nil,
+                imageURLString: "",
+                urlString: nil
+            ),
+            Episode(
+                id: "Episode 5",
+                title: "The fifth episode doesn't have the image URL",
+                desc: nil,
+                date: nil,
+                imageURLString: "",
                 urlString: nil
             )
         ]
     )
+}
+
+#Preview("Empty Episodes", as: .systemSmall) {
+    FavoriteEpisodesWidget()
+} timeline: {
+    FavoriteEpisodesEntry(episodes: [])
 }
