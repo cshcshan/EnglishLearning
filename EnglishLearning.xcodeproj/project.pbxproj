@@ -12,6 +12,7 @@
 		33FCD3D82D1D2B4300935C08 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 33FCD3D72D1D2B4300935C08 /* WidgetKit.framework */; };
 		33FCD3DA2D1D2B4300935C08 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 33FCD3D92D1D2B4300935C08 /* SwiftUI.framework */; };
 		33FCD3E62D1D2B4400935C08 /* FavoriteEpisodesWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 33FCD3D62D1D2B4300935C08 /* FavoriteEpisodesWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		33FCD3F02D1D2BAC00935C08 /* Episodes in Frameworks */ = {isa = PBXBuildFile; productRef = 33FCD3EF2D1D2BAC00935C08 /* Episodes */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -138,6 +139,7 @@
 			files = (
 				33FCD3DA2D1D2B4300935C08 /* SwiftUI.framework in Frameworks */,
 				33FCD3D82D1D2B4300935C08 /* WidgetKit.framework in Frameworks */,
+				33FCD3F02D1D2BAC00935C08 /* Episodes in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -268,6 +270,7 @@
 			);
 			name = FavoriteEpisodesWidgetExtension;
 			packageProductDependencies = (
+				33FCD3EF2D1D2BAC00935C08 /* Episodes */,
 			);
 			productName = FavoriteEpisodesWidgetExtension;
 			productReference = 33FCD3D62D1D2B4300935C08 /* FavoriteEpisodesWidgetExtension.appex */;
@@ -769,6 +772,10 @@
 		339913DE2D0DBADA008CBBEF /* AudioPlayer */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AudioPlayer;
+		};
+		33FCD3EF2D1D2BAC00935C08 /* Episodes */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Episodes;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
