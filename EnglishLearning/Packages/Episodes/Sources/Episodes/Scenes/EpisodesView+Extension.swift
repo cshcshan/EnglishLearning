@@ -108,8 +108,7 @@ extension EpisodesView {
         case fetchData(isForce: Bool)
         case confirmErrorAlert
         case episodeTapped(Episode)
-        case addFavorite(episodeID: String)
-        case removeFavorite(episodeID: String)
+        case favoriteTapped(Episode)
         case episodeDetailLoaded(EpisodeDetail)
         case hidePlayPanelView
     }
@@ -173,24 +172,24 @@ extension EpisodesView {
                         newState = .build(with: state, fetchDataError: nil)
                     case let .episodeTapped(episode):
                         newState = .build(with: state, selectedEpisode: episode)
-                    case let .addFavorite(episodeID):
-                        self.userDefaultsManagerable.favoriteEpisodeIDs.insert(episodeID)
-                        self.widgetManagerable.reloadAllTimelines()
-                        let organizedEpisodes = self.organizeEpisodes(allEpisodes: state.allEpisodes)
-                        newState = .build(
-                            with: state,
-                            allEpisodes: organizedEpisodes.all,
-                            favoriteEpisodes: organizedEpisodes.favorite
-                        )
-                    case let .removeFavorite(episodeID):
-                        self.userDefaultsManagerable.favoriteEpisodeIDs.remove(episodeID)
-                        self.widgetManagerable.reloadAllTimelines()
-                        let organizedEpisodes = self.organizeEpisodes(allEpisodes: state.allEpisodes)
-                        newState = .build(
-                            with: state,
-                            allEpisodes: organizedEpisodes.all,
-                            favoriteEpisodes: organizedEpisodes.favorite
-                        )
+                    case let .favoriteTapped(episode):
+                        if let id = episode.id {
+                            if episode.isFavorite {
+                                self.userDefaultsManagerable.favoriteEpisodeIDs.remove(id)
+                            } else {
+                                self.userDefaultsManagerable.favoriteEpisodeIDs.insert(id)
+                            }
+                            
+                            self.widgetManagerable.reloadAllTimelines()
+                            let organizedEpisodes = self.organizeEpisodes(allEpisodes: state.allEpisodes)
+                            newState = .build(
+                                with: state,
+                                allEpisodes: organizedEpisodes.all,
+                                favoriteEpisodes: organizedEpisodes.favorite
+                            )
+                        } else {
+                            newState = state
+                        }
                     case let .episodeDetailLoaded(episodeDetail):
                         newState = .build(
                             with: state,

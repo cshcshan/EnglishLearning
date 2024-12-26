@@ -473,7 +473,7 @@ struct EpisodesViewTests {
             reducer: reducer.process
         )
         
-        await sut.send(.addFavorite(episodeID: arguments.addEpisodeID))
+        await sut.send(.favoriteTapped(Episode.dummy(id: arguments.addEpisodeID)))
         
         let expectedViewState = ViewState(
             isFetchingData: false,
@@ -612,7 +612,7 @@ struct EpisodesViewTests {
             reducer: reducer.process
         )
         
-        await sut.send(.removeFavorite(episodeID: arguments.removeEpisodeID))
+        await sut.send(.favoriteTapped(Episode.dummyFav(id: arguments.removeEpisodeID)))
         
         let expectedViewState = ViewState(
             isFetchingData: false,

@@ -159,14 +159,7 @@ public struct EpisodesView: View {
                 EpisodeView(
                     episode: episode,
                     heartTapped: {
-                        guard let id = episode.id else { return }
-                        Task {
-                            if episode.isFavorite {
-                                await self.store.send(.removeFavorite(episodeID: id))
-                            } else {
-                                await self.store.send(.addFavorite(episodeID: id))
-                            }
-                        }
+                        Task { await self.store.send(.favoriteTapped(episode)) }
                     }
                 )
             }
