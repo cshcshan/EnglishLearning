@@ -35,7 +35,7 @@ struct FavoriteEpisodesWidget: Widget {
                 title: "The first episode title and it should be loooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong",
                 desc: nil,
                 date: nil,
-                imageURLString: "https://ichef.bbci.co.uk/images/ic/1920xn/p0k67wpv.jpg",
+                imageURLString: nil,
                 urlString: nil
             ),
             Episode(
@@ -43,7 +43,7 @@ struct FavoriteEpisodesWidget: Widget {
                 title: "My second episode",
                 desc: nil,
                 date: nil,
-                imageURLString: "https://ichef.bbci.co.uk/images/ic/1920xn/p0k67wpv.jpg",
+                imageURLString: nil,
                 urlString: nil
             ),
             Episode(
@@ -51,7 +51,7 @@ struct FavoriteEpisodesWidget: Widget {
                 title: "The third but may not be the last if I add others to this array later",
                 desc: nil,
                 date: nil,
-                imageURLString: "https://ichef.bbci.co.uk/images/ic/1920xn/p0k67wpv.jpg",
+                imageURLString: nil,
                 urlString: nil
             ),
             Episode(
@@ -59,7 +59,7 @@ struct FavoriteEpisodesWidget: Widget {
                 title: "The fourth episode doesn't have the image URL",
                 desc: nil,
                 date: nil,
-                imageURLString: "",
+                imageURLString: nil,
                 urlString: nil
             ),
             Episode(
@@ -67,7 +67,7 @@ struct FavoriteEpisodesWidget: Widget {
                 title: "The fifth episode doesn't have the image URL",
                 desc: nil,
                 date: nil,
-                imageURLString: "",
+                imageURLString: nil,
                 urlString: nil
             )
         ]
