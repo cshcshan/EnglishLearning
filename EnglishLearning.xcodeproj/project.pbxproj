@@ -9,6 +9,9 @@
 /* Begin PBXBuildFile section */
 		330D4D3F2CF2169F008BE93C /* Episodes in Frameworks */ = {isa = PBXBuildFile; productRef = 330D4D3E2CF2169F008BE93C /* Episodes */; };
 		339913DF2D0DBADA008CBBEF /* AudioPlayer in Frameworks */ = {isa = PBXBuildFile; productRef = 339913DE2D0DBADA008CBBEF /* AudioPlayer */; };
+		33FCD3D82D1D2B4300935C08 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 33FCD3D72D1D2B4300935C08 /* WidgetKit.framework */; };
+		33FCD3DA2D1D2B4300935C08 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 33FCD3D92D1D2B4300935C08 /* SwiftUI.framework */; };
+		33FCD3E62D1D2B4400935C08 /* FavoriteEpisodesWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 33FCD3D62D1D2B4300935C08 /* FavoriteEpisodesWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -26,12 +29,36 @@
 			remoteGlobalIDString = 333556572CF03D3F00C5F606;
 			remoteInfo = EnglishLearning;
 		};
+		33FCD3E32D1D2B4400935C08 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 333556502CF03D3F00C5F606 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 33FCD3D52D1D2B4300935C08;
+			remoteInfo = FavoriteEpisodesWidgetExtension;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		33FCD3E52D1D2B4400935C08 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				33FCD3E62D1D2B4400935C08 /* FavoriteEpisodesWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		333556582CF03D3F00C5F606 /* EnglishLearning.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EnglishLearning.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3335566A2CF03D4000C5F606 /* EnglishLearningTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EnglishLearningTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		333556742CF03D4000C5F606 /* EnglishLearningUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EnglishLearningUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		33FCD3D62D1D2B4300935C08 /* FavoriteEpisodesWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FavoriteEpisodesWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		33FCD3D72D1D2B4300935C08 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		33FCD3D92D1D2B4300935C08 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -42,6 +69,13 @@
 				Packages/AudioPlayer,
 			);
 			target = 333556572CF03D3F00C5F606 /* EnglishLearning */;
+		};
+		33FCD3EA2D1D2B4400935C08 /* Exceptions for "FavoriteEpisodesWidget" folder in "FavoriteEpisodesWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 33FCD3D52D1D2B4300935C08 /* FavoriteEpisodesWidgetExtension */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -62,6 +96,14 @@
 		333556772CF03D4000C5F606 /* EnglishLearningUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = EnglishLearningUITests;
+			sourceTree = "<group>";
+		};
+		33FCD3DB2D1D2B4300935C08 /* FavoriteEpisodesWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				33FCD3EA2D1D2B4400935C08 /* Exceptions for "FavoriteEpisodesWidget" folder in "FavoriteEpisodesWidgetExtension" target */,
+			);
+			path = FavoriteEpisodesWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -90,6 +132,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		33FCD3D32D1D2B4300935C08 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				33FCD3DA2D1D2B4300935C08 /* SwiftUI.framework in Frameworks */,
+				33FCD3D82D1D2B4300935C08 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -99,6 +150,7 @@
 				3335565A2CF03D3F00C5F606 /* EnglishLearning */,
 				3335566D2CF03D4000C5F606 /* EnglishLearningTests */,
 				333556772CF03D4000C5F606 /* EnglishLearningUITests */,
+				33FCD3DB2D1D2B4300935C08 /* FavoriteEpisodesWidget */,
 				333557382CF0D94100C5F606 /* Frameworks */,
 				333556592CF03D3F00C5F606 /* Products */,
 			);
@@ -110,6 +162,7 @@
 				333556582CF03D3F00C5F606 /* EnglishLearning.app */,
 				3335566A2CF03D4000C5F606 /* EnglishLearningTests.xctest */,
 				333556742CF03D4000C5F606 /* EnglishLearningUITests.xctest */,
+				33FCD3D62D1D2B4300935C08 /* FavoriteEpisodesWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -117,6 +170,8 @@
 		333557382CF0D94100C5F606 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				33FCD3D72D1D2B4300935C08 /* WidgetKit.framework */,
+				33FCD3D92D1D2B4300935C08 /* SwiftUI.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -131,10 +186,12 @@
 				333556542CF03D3F00C5F606 /* Sources */,
 				333556552CF03D3F00C5F606 /* Frameworks */,
 				333556562CF03D3F00C5F606 /* Resources */,
+				33FCD3E52D1D2B4400935C08 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				33FCD3E42D1D2B4400935C08 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				3335565A2CF03D3F00C5F606 /* EnglishLearning */,
@@ -194,6 +251,28 @@
 			productReference = 333556742CF03D4000C5F606 /* EnglishLearningUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		33FCD3D52D1D2B4300935C08 /* FavoriteEpisodesWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 33FCD3E72D1D2B4400935C08 /* Build configuration list for PBXNativeTarget "FavoriteEpisodesWidgetExtension" */;
+			buildPhases = (
+				33FCD3D22D1D2B4300935C08 /* Sources */,
+				33FCD3D32D1D2B4300935C08 /* Frameworks */,
+				33FCD3D42D1D2B4300935C08 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				33FCD3DB2D1D2B4300935C08 /* FavoriteEpisodesWidget */,
+			);
+			name = FavoriteEpisodesWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = FavoriteEpisodesWidgetExtension;
+			productReference = 33FCD3D62D1D2B4300935C08 /* FavoriteEpisodesWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -201,7 +280,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1610;
+				LastSwiftUpdateCheck = 1620;
 				LastUpgradeCheck = 1610;
 				TargetAttributes = {
 					333556572CF03D3F00C5F606 = {
@@ -214,6 +293,9 @@
 					333556732CF03D4000C5F606 = {
 						CreatedOnToolsVersion = 16.1;
 						TestTargetID = 333556572CF03D3F00C5F606;
+					};
+					33FCD3D52D1D2B4300935C08 = {
+						CreatedOnToolsVersion = 16.2;
 					};
 				};
 			};
@@ -234,6 +316,7 @@
 				333556572CF03D3F00C5F606 /* EnglishLearning */,
 				333556692CF03D4000C5F606 /* EnglishLearningTests */,
 				333556732CF03D4000C5F606 /* EnglishLearningUITests */,
+				33FCD3D52D1D2B4300935C08 /* FavoriteEpisodesWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -254,6 +337,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		333556722CF03D4000C5F606 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		33FCD3D42D1D2B4300935C08 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -284,6 +374,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		33FCD3D22D1D2B4300935C08 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -296,6 +393,11 @@
 			isa = PBXTargetDependency;
 			target = 333556572CF03D3F00C5F606 /* EnglishLearning */;
 			targetProxy = 333556752CF03D4000C5F606 /* PBXContainerItemProxy */;
+		};
+		33FCD3E42D1D2B4400935C08 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 33FCD3D52D1D2B4300935C08 /* FavoriteEpisodesWidgetExtension */;
+			targetProxy = 33FCD3E32D1D2B4400935C08 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -553,6 +655,62 @@
 			};
 			name = Release;
 		};
+		33FCD3E82D1D2B4400935C08 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = QL662FZ3MK;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FavoriteEpisodesWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FavoriteEpisodesWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.csh.EnglishLearning.FavoriteEpisodesWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		33FCD3E92D1D2B4400935C08 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = QL662FZ3MK;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = FavoriteEpisodesWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = FavoriteEpisodesWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.csh.EnglishLearning.FavoriteEpisodesWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -588,6 +746,15 @@
 			buildConfigurations = (
 				333556852CF03D4000C5F606 /* Debug */,
 				333556862CF03D4000C5F606 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		33FCD3E72D1D2B4400935C08 /* Build configuration list for PBXNativeTarget "FavoriteEpisodesWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				33FCD3E82D1D2B4400935C08 /* Debug */,
+				33FCD3E92D1D2B4400935C08 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
