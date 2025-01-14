@@ -21,7 +21,7 @@ struct FavoriteEpisodes {
 
         do {
             let modelContainer = try ModelContainer.buildProd()
-            self.dataSource = try DataSource(with: modelContainer)
+            self.dataSource = DataSource(modelContainer: modelContainer)
             self.modelContainer = modelContainer
         } catch {
             Task { await Log.data.add(error: error) }
@@ -30,7 +30,7 @@ struct FavoriteEpisodes {
         }
     }
     
-    func callAsFunction() -> [Episode] {
+    func callAsFunction() async -> [Episode] {
         let favEpisodeIDs = userDefaultsManager.favoriteEpisodeIDs
 
         guard let dataSource, !favEpisodeIDs.isEmpty else { return [] }
@@ -45,7 +45,7 @@ struct FavoriteEpisodes {
         let sortBy = SortDescriptor<Episode>(\.date, order: .reverse)
 
         do {
-            return try dataSource.fetch(FetchDescriptor(predicate: predicate, sortBy: [sortBy]))
+            return try await dataSource.fetch(FetchDescriptor(predicate: predicate, sortBy: [sortBy]))
         } catch {
             Task { await Log.data.add(error: error) }
             return []

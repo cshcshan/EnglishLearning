@@ -34,8 +34,11 @@ struct FavoriteEpisodesProvider: TimelineProvider {
         in context: Context,
         completion: @escaping @Sendable (Timeline<FavoriteEpisodesEntry>) -> Void
     ) {
-        let entry = FavoriteEpisodesEntry(episodes: favoriteEpisodes())
-        let timeline = Timeline(entries: [entry], policy: .never)
-        completion(timeline)
+        Task {
+            let episodes = await favoriteEpisodes()
+            let entry = FavoriteEpisodesEntry(episodes: episodes)
+            let timeline = Timeline(entries: [entry], policy: .never)
+            completion(timeline)
+        }
     }
 }

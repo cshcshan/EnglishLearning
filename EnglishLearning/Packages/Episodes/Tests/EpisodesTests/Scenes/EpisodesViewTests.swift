@@ -124,7 +124,8 @@ struct EpisodesViewTests {
         let hasServerNewEpisodes = arguments.hasServerNewEpisodes
 
         let mockHtmlConverter = MockHtmlConverter()
-        let mockDataSource = try DataSource.mock(with: localEpisodes)
+        let mockDataSource = try await DataSource.mock(with: localEpisodes)
+        let mockServerEpisodesChecker = MockServerEpisodesChecker(hasServerNewEpisodesResult: hasServerNewEpisodes)
 
         let reducer = ViewReducer(
             htmlConvertable: mockHtmlConverter,
@@ -133,7 +134,7 @@ struct EpisodesViewTests {
             appGroupFileManagerable: MockAppGroupFileManager(),
             widgetManagerable: MockWidgetManager(),
             episodeImagePathFormat: "",
-            hasServerNewEpisodes: hasServerNewEpisodes
+            serverNewEpisodesCheckable: mockServerEpisodesChecker
         )
         
         let sut = ViewStore(
@@ -194,7 +195,7 @@ struct EpisodesViewTests {
         )
     ])
     func fetchData_favEpisodes(arguments: FetchDataFavoriteArguments) async throws {
-        let mockDataSource = try DataSource.mock(with: arguments.localAllEpisodes)
+        let mockDataSource = try await DataSource.mock(with: arguments.localAllEpisodes)
         let mockUserDefaultsManager = MockUserDefaultsManager(
             favoriteEpisodeIDs: arguments.favoriteEpisodeIDs
         )
@@ -205,7 +206,7 @@ struct EpisodesViewTests {
             appGroupFileManagerable: MockAppGroupFileManager(),
             widgetManagerable: MockWidgetManager(),
             episodeImagePathFormat: "",
-            hasServerNewEpisodes: false
+            serverNewEpisodesCheckable: MockServerEpisodesChecker(hasServerNewEpisodesResult: false)
         )
         
         let sut = ViewStore(
@@ -263,7 +264,7 @@ struct EpisodesViewTests {
             appGroupFileManagerable: MockAppGroupFileManager(),
             widgetManagerable: MockWidgetManager(),
             episodeImagePathFormat: "",
-            hasServerNewEpisodes: false
+            serverNewEpisodesCheckable: MockServerEpisodesChecker(hasServerNewEpisodesResult: false)
         )
         
         let sut = ViewStore(
@@ -281,7 +282,7 @@ struct EpisodesViewTests {
         await sut.send(.fetchData(isForce: isForceFetch))
         
         #expect(actualStates == arguments.expectedStates)
-        #expect(mockDataSource.fetchCount == arguments.expectedLoadLocalEpisodesCount)
+        #expect(await mockDataSource.fetchCount == arguments.expectedLoadLocalEpisodesCount)
         #expect(await mockHtmlConverter.loadEpisodesCount == arguments.expectedLoadServerEpisodesCount)
     }
     
@@ -304,7 +305,7 @@ struct EpisodesViewTests {
             appGroupFileManagerable: MockAppGroupFileManager(),
             widgetManagerable: MockWidgetManager(),
             episodeImagePathFormat: "",
-            hasServerNewEpisodes: false
+            serverNewEpisodesCheckable: MockServerEpisodesChecker(hasServerNewEpisodesResult: false)
         )
 
         let episodes: [Episode] = arguments.hasEpisodes ? .dummy(withAmount: 10) : []
@@ -343,7 +344,7 @@ struct EpisodesViewTests {
             appGroupFileManagerable: MockAppGroupFileManager(),
             widgetManagerable: MockWidgetManager(),
             episodeImagePathFormat: "",
-            hasServerNewEpisodes: false
+            serverNewEpisodesCheckable: MockServerEpisodesChecker(hasServerNewEpisodesResult: false)
         )
         let state = ViewState(
             isFetchingData: false,
@@ -468,7 +469,7 @@ struct EpisodesViewTests {
             appGroupFileManagerable: appGroupFileManagerable,
             widgetManagerable: mockWidgetManager,
             episodeImagePathFormat: "",
-            hasServerNewEpisodes: false
+            serverNewEpisodesCheckable: MockServerEpisodesChecker(hasServerNewEpisodesResult: false)
         )
 
         let state = ViewState(
@@ -611,7 +612,7 @@ struct EpisodesViewTests {
             appGroupFileManagerable: appGroupFileManagerable,
             widgetManagerable: mockWidgetManager,
             episodeImagePathFormat: "",
-            hasServerNewEpisodes: false
+            serverNewEpisodesCheckable: MockServerEpisodesChecker(hasServerNewEpisodesResult: false)
         )
 
         let state = ViewState(
@@ -673,7 +674,7 @@ struct EpisodesViewTests {
             appGroupFileManagerable: MockAppGroupFileManager(),
             widgetManagerable: MockWidgetManager(),
             episodeImagePathFormat: "",
-            hasServerNewEpisodes: false
+            serverNewEpisodesCheckable: MockServerEpisodesChecker(hasServerNewEpisodesResult: false)
         )
         let state = ViewState(
             isFetchingData: false,
@@ -701,7 +702,7 @@ struct EpisodesViewTests {
             appGroupFileManagerable: MockAppGroupFileManager(),
             widgetManagerable: MockWidgetManager(),
             episodeImagePathFormat: "",
-            hasServerNewEpisodes: false
+            serverNewEpisodesCheckable: MockServerEpisodesChecker(hasServerNewEpisodesResult: false)
         )
         let state = ViewState(
             isFetchingData: false,
@@ -741,10 +742,10 @@ extension EpisodesViewTests {
 
 extension DataSource {
     @MainActor
-    fileprivate static func mock(with episodes: [Episode] = []) throws -> DataSource {
-        let mockDataSource = try DataSource(with: .mock(isStoredInMemoryOnly: true))
+    fileprivate static func mock(with episodes: [Episode] = []) async throws -> DataSource {
+        let mockDataSource = try DataSource(modelContainer: .mock(isStoredInMemoryOnly: true))
         if !episodes.isEmpty {
-            try mockDataSource.add(episodes)
+            try await mockDataSource.add(episodes)
         }
         return mockDataSource
     }

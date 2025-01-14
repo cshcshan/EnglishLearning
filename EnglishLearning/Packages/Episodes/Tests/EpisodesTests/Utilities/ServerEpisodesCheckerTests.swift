@@ -52,12 +52,12 @@ struct ServerEpisodesCheckerTests {
         ]
     )
     func hasServerNewEpisodes(arguments: Arguments) async throws {
-        let dataSource = try DataSource(with: .mock(isStoredInMemoryOnly: true))
+        let dataSource = try DataSource(modelContainer: .mock(isStoredInMemoryOnly: true))
         if !arguments.localEpisodes.isEmpty {
-            try dataSource.add(arguments.localEpisodes)
+            try await dataSource.add(arguments.localEpisodes)
         }
         let sut = ServerEpisodesChecker(dataSource: dataSource)
-        #expect(sut.hasServerNewEpisodes(with: arguments.today) == arguments.expectedResult)
+        #expect(await sut.hasServerNewEpisodes(with: arguments.today) == arguments.expectedResult)
     }
 
 }

@@ -32,7 +32,7 @@ struct EnglishLearningApp: App {
     init() {
         do {
             let modelContainer = try ModelContainer.buildProd()
-            self.dataSource = try DataSource(with: modelContainer)
+            self.dataSource = DataSource(modelContainer: modelContainer)
         } catch {
             fatalError()
         }

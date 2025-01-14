@@ -31,7 +31,7 @@ struct EpisodeDetailViewTests {
             scriptHtml: "<p>Hello Swift</p>"
         )
         let mockHtmlConverter = MockHtmlConverter(loadEpisodeDetailResult: .success(episodeDetail))
-        let mockDataSource = try DataSource(with: .mock(isStoredInMemoryOnly: true))
+        let mockDataSource = try DataSource(modelContainer: .mock(isStoredInMemoryOnly: true))
 
         let sut = EpisodeDetailView(
             htmlConvertable: mockHtmlConverter,
@@ -57,9 +57,9 @@ struct EpisodeDetailViewTests {
             scriptHtml: "Hello Swift"
         )
         let mockHtmlConverter = MockHtmlConverter(loadEpisodeDetailResult: .success(episodeDetail))
-        let mockDataSource = try DataSource(with: .mock(isStoredInMemoryOnly: true))
+        let mockDataSource = try DataSource(modelContainer: .mock(isStoredInMemoryOnly: true))
         if hasLocalDetail {
-            try mockDataSource.add([episodeDetail])
+            try await mockDataSource.add([episodeDetail])
         }
 
         let reducer = EpisodeDetailView.ViewReducer(
@@ -95,7 +95,7 @@ struct EpisodeDetailViewTests {
         let imageURL = URL(string: "https://ichef.bbci.co.uk/images/ic/1920xn/p0k67wpv.jpg")
 
         let mockHtmlConverter = MockHtmlConverter()
-        let mockDataSource = try DataSource(with: .mock(isStoredInMemoryOnly: true))
+        let mockDataSource = try DataSource(modelContainer: .mock(isStoredInMemoryOnly: true))
 
         let reducer = EpisodeDetailView.ViewReducer(
             htmlConvertable: mockHtmlConverter,

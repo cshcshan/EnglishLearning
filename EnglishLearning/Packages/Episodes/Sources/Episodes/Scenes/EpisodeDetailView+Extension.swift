@@ -143,7 +143,7 @@ extension EpisodeDetailView {
         private func fetchData(withEpisodeID episodeID: String) async throws -> EpisodeDetail {
             let predicate = #Predicate<EpisodeDetail> { $0.id == episodeID }
             let fetchDescriptor = FetchDescriptor(predicate: predicate)
-            let episodeDetail = try dataSource.fetch(fetchDescriptor).first
+            let episodeDetail = try await dataSource.fetch(fetchDescriptor).first
             
             if let episodeDetail {
                 return episodeDetail
@@ -162,7 +162,7 @@ extension EpisodeDetailView {
                 let episodeDetail = try await htmlConvertable.loadEpisodeDetail(
                     withID: episodeID, path: episodePath
                 )
-                try dataSource.add([episodeDetail])
+                try await dataSource.add([episodeDetail])
                 return episodeDetail
             } catch {
                 await Log.network.add(error: error)

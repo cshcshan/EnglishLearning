@@ -8,8 +8,8 @@
 import Foundation
 import SwiftData
 
-public final class MockDataSource: DataProvideable {
-    public typealias FetchResult = Result<[any PersistentModel], DummyError>
+public actor MockDataSource: DataProvideable {
+    public typealias FetchResult = Result<[any SendablePersistentModel], DummyError>
     
     var fetchResult: FetchResult?
     public private(set) var fetchCount = 0
@@ -18,7 +18,9 @@ public final class MockDataSource: DataProvideable {
         self.fetchResult = fetchResult
     }
     
-    public func fetch<Model: PersistentModel>(_ descriptor: FetchDescriptor<Model>) throws -> [Model] {
+    public func fetch<Model: SendablePersistentModel>(
+        _ descriptor: FetchDescriptor<Model>
+    ) throws -> [Model] {
         fetchCount += 1
         guard let fetchResult else { return [] }
 
@@ -30,7 +32,7 @@ public final class MockDataSource: DataProvideable {
         }
     }
     
-    public func add<Model: PersistentModel>(_ models: [Model]) throws {}
+    public func add<Model: SendablePersistentModel>(_ models: [Model]) throws {}
     
-    public func delete<Model: PersistentModel>(_ models: [Model]) throws {}
+    public func delete<Model: SendablePersistentModel>(_ models: [Model]) throws {}
 }

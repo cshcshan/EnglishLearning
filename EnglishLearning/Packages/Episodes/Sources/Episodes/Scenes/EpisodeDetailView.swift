@@ -78,7 +78,7 @@ struct EpisodeDetailView: View {
 
     let mockHtmlConverter = MockHtmlConverter()
     Task { await mockHtmlConverter.setLoadEpisodeDetailResult(.success(episodeDetail)) }
-    let dataSource = try! DataSource(with: .mock(isStoredInMemoryOnly: true))
+    let dataSource = try! DataSource(modelContainer: .mock(isStoredInMemoryOnly: true))
 
     return EpisodeDetailView(
         htmlConvertable: mockHtmlConverter,

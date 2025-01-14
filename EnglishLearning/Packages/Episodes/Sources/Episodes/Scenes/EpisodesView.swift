@@ -103,7 +103,7 @@ public struct EpisodesView: View {
             appGroupFileManagerable: appGroupFileManagerable,
             widgetManagerable: widgetManagerable,
             episodeImagePathFormat: episodeImagePathFormat,
-            hasServerNewEpisodes: serverNewEpisodesChecker.hasServerNewEpisodes(with: Date())
+            serverNewEpisodesCheckable: serverNewEpisodesChecker
         )
         self.store = EpisodesStore(initialState: .default, reducer: reducer.process)
     }
@@ -227,7 +227,7 @@ public struct EpisodesView: View {
 
     let mockHtmlConverter = MockHtmlConverter()
     Task { await mockHtmlConverter.setLoadEpisodesResult(.success(episodes)) }
-    let dataSource = try! DataSource(with: .mock(isStoredInMemoryOnly: true))
+    let dataSource = try! DataSource(modelContainer: .mock(isStoredInMemoryOnly: true))
 
     return EpisodesView(
         htmlConvertable: mockHtmlConverter,
@@ -242,7 +242,7 @@ public struct EpisodesView: View {
 #Preview("Error") {
     let mockHtmlConverter = MockHtmlConverter()
     Task { await mockHtmlConverter.setLoadEpisodesResult(.failure(DummyError.fetchServerDataError)) }
-    let dataSource = try! DataSource(with: .mock(isStoredInMemoryOnly: true))
+    let dataSource = try! DataSource(modelContainer: .mock(isStoredInMemoryOnly: true))
 
     return EpisodesView(
         htmlConvertable: mockHtmlConverter,

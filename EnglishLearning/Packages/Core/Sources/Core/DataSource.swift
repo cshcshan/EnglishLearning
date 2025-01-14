@@ -7,35 +7,28 @@
 
 import SwiftData
 
-public protocol DataProvideable {
-    func fetch<Model: PersistentModel>(_ descriptor: FetchDescriptor<Model>) throws -> [Model]
-    func add<Model: PersistentModel>(_ models: [Model]) throws
-    func delete<Model: PersistentModel>(_ models: [Model]) throws
+public typealias SendablePersistentModel = PersistentModel & Sendable
+
+public protocol DataProvideable: Sendable {
+    func fetch<Model: SendablePersistentModel>(_ descriptor: FetchDescriptor<Model>) async throws -> [Model]
+    func add<Model: SendablePersistentModel>(_ models: [Model]) async throws
+    func delete<Model: SendablePersistentModel>(_ models: [Model]) async throws
 }
 
-public struct DataSource: DataProvideable {
-    // NOTE:
-    // Although we don't access `modelContainer` in `DataSource` except `init()`, we still need to store
-    // it globally, otherwise, it will be released after `init()`
-    public let modelContainer: ModelContainer
-    private let modelContext: ModelContext
-    
-    @MainActor
-    public init(with modelContainer: ModelContainer) throws {
-        self.modelContainer = modelContainer
-        self.modelContext = modelContainer.mainContext
-    }
-    
-    public func fetch<Model: PersistentModel>(_ descriptor: FetchDescriptor<Model>) throws -> [Model] {
+@ModelActor
+public actor DataSource: DataProvideable {
+    public func fetch<Model: SendablePersistentModel>(
+        _ descriptor: FetchDescriptor<Model>
+    ) async throws -> [Model] {
         try modelContext.fetch(descriptor)
     }
     
-    public func add<Model: PersistentModel>(_ models: [Model]) throws {
+    public func add<Model: SendablePersistentModel>(_ models: [Model]) async throws {
         models.forEach { modelContext.insert($0) }
         try modelContext.save()
     }
     
-    public func delete<Model: PersistentModel>(_ models: [Model]) throws {
+    public func delete<Model: SendablePersistentModel>(_ models: [Model]) async throws {
         models.forEach { modelContext.delete($0) }
         try modelContext.save()
     }

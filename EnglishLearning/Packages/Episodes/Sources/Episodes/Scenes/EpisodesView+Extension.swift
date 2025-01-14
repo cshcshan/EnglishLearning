@@ -233,7 +233,7 @@ extension EpisodesView {
         private var appGroupFileManagerable: AppGroupFileManagerable
         private var widgetManagerable: WidgetManagerable
         private let episodeImagePathFormat: String
-        private let hasServerNewEpisodes: Bool
+        private let serverNewEpisodesCheckable: any ServerEpisodesCheckable
         
         deinit {
             print("deinit \(URL(string: #filePath)!.lastPathComponent)")
@@ -246,7 +246,7 @@ extension EpisodesView {
             appGroupFileManagerable: AppGroupFileManagerable,
             widgetManagerable: WidgetManagerable,
             episodeImagePathFormat: String,
-            hasServerNewEpisodes: Bool
+            serverNewEpisodesCheckable: ServerEpisodesCheckable
         ) {
             self.htmlConvertable = htmlConvertable
             self.dataProvideable = dataProvideable
@@ -254,15 +254,16 @@ extension EpisodesView {
             self.appGroupFileManagerable = appGroupFileManagerable
             self.widgetManagerable = widgetManagerable
             self.episodeImagePathFormat = episodeImagePathFormat
-            self.hasServerNewEpisodes = hasServerNewEpisodes
+            self.serverNewEpisodesCheckable = serverNewEpisodesCheckable
         }
         
         private func fetchDataFromDB(serverFetching: () -> Void) async throws -> [Episode] {
+            let hasServerNewEpisodes = await serverNewEpisodesCheckable.hasServerNewEpisodes(with: .now)
             if hasServerNewEpisodes {
                 return try await fetchDataFromServer(serverFetching: serverFetching)
             } else {
                 do {
-                    return try dataProvideable.fetch(fetchEpisodesDescriptor)
+                    return try await dataProvideable.fetch(fetchEpisodesDescriptor)
                 } catch {
                     await Log.data.add(error: error)
                     throw error
@@ -275,8 +276,8 @@ extension EpisodesView {
             
             do {
                 let htmlEpisodes = try await htmlConvertable.loadEpisodes()
-                try dataProvideable.add(htmlEpisodes)
-                return try dataProvideable.fetch(fetchEpisodesDescriptor)
+                try await dataProvideable.add(htmlEpisodes)
+                return try await dataProvideable.fetch(fetchEpisodesDescriptor)
             } catch {
                 await Log.network.add(error: error)
                 throw error

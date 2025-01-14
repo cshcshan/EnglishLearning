@@ -9,21 +9,25 @@ import Core
 import Foundation
 import SwiftData
 
-struct ServerEpisodesChecker {
+protocol ServerEpisodesCheckable: Sendable {
+    func hasServerNewEpisodes(with now: Date) async -> Bool
+}
+
+struct ServerEpisodesChecker: ServerEpisodesCheckable {
     private let dataSource: DataSource
     
     init(dataSource: DataSource) {
         self.dataSource = dataSource
     }
     
-    func hasServerNewEpisodes(with now: Date) -> Bool {
+    func hasServerNewEpisodes(with now: Date) async -> Bool {
         var fetchDescriptor = FetchDescriptor<Episode>(sortBy: [SortDescriptor(\.date, order: .reverse)])
         fetchDescriptor.fetchLimit = 1
         
-        guard let lastLocalEpisodeDate = try? dataSource.fetch(fetchDescriptor).last?.date,
+        guard let lastLocalEpisodeDate = try? await dataSource.fetch(fetchDescriptor).last?.date,
               let lastThursday = now.lastWeekday(.thursday)
         else { return true }
-
+        
         let compareResult = lastLocalEpisodeDate.compare(with: lastThursday, toGranularity: .day)
         switch compareResult {
         case .orderedAscending:
