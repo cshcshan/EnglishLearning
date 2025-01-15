@@ -228,12 +228,12 @@ extension EpisodesView {
         )
 
         private let htmlConvertable: HtmlConvertable
-        private let dataProvideable: any DataProvideable
+        private let dataProvideable: DataProvideable
         private var userDefaultsManagerable: UserDefaultsManagerable
         private var appGroupFileManagerable: AppGroupFileManagerable
         private var widgetManagerable: WidgetManagerable
         private let episodeImagePathFormat: String
-        private let serverNewEpisodesCheckable: any ServerEpisodesCheckable
+        private let serverNewEpisodesCheckable: ServerEpisodesCheckable
         
         deinit {
             print("deinit \(URL(string: #filePath)!.lastPathComponent)")
@@ -241,7 +241,7 @@ extension EpisodesView {
         
         init(
             htmlConvertable: HtmlConvertable,
-            dataProvideable: any DataProvideable,
+            dataProvideable: DataProvideable,
             userDefaultsManagerable: UserDefaultsManagerable,
             appGroupFileManagerable: AppGroupFileManagerable,
             widgetManagerable: WidgetManagerable,
